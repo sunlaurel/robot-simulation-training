@@ -1,6 +1,7 @@
 import pygame
 import sys
 import numpy as np
+from utils import models
 
 # TODO: change from np.vectorize to just broadcasting
 
