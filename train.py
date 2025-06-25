@@ -1,10 +1,7 @@
-import numpy as np
-import pandas as pd
-import torch.nn as nn
-import torch
-import torch.nn.functional as F
 from utils import *
 from train_helper import *
+
+# TODO: make sure that the predicted velocities are converted to float tensors instead of double tensors
 
 # Training parameters
 num_epochs = 100
@@ -18,15 +15,24 @@ future_steps = 9
 offset_flag = True
 rotate_flag = False
 noise_flag = False
-scale_flag = False
+scale_flag = True
 
-# Iniitalizing the dataset
-dataset = data.TrajectoryDataset(
-    "./training-data/crowd_data.csv",
+# Splitting the data 80/20, just cutting at 80% of the data
+csv_file = "./training-data/crowd_data.csv"
+csv_data = pd.read_csv(csv_file)
+split = int(0.8 * len(csv_data))
+
+# Initalizing the dataset
+training_data = TrajectoryDataset(
+    csv_data=csv_data[:split],
     offset_flag=offset_flag,
     rotate_flag=rotate_flag,
     noise_flag=noise_flag,
     scale_flag=scale_flag,
+)
+
+testing_data = TrajectoryDataset(
+    csv_data=csv_data[split:]
 )
 
 # Set optimizer (adam) and loss function (mse)
@@ -34,44 +40,31 @@ network = models.MultiLayer(4 * past_steps, 100, 100, future_steps * 4)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
 
-# Load the data, and split it into batches
-training_generator = torch.utils.data.DataLoader(
-    dataset, batch_size=batch_size, shuffle=True
-)
 
-testing_generator = torch.utils.data.DataLoader(
-    dataset, batch_size=batch_size, shuffle=False
-)
+if __name__ == "__main__":
+    # Load the data, and split it into batches
+    training_generator = torch.utils.data.DataLoader(
+        training_data, batch_size=batch_size, shuffle=True
+    )
 
-print("Loaded Data")
+    testing_generator = torch.utils.data.DataLoader(
+        testing_data, batch_size=batch_size, shuffle=False
+    )
 
-for x_past, x_future, v_past, v_future in training_generator:
-    # Plot the trajectory
-    plot_trajectory(x_past[0], x_future[0], v_past[0], v_future[0])
-    # break  # Only plot the first batch to avoid unnecessary looping
+    print("Loaded Data")
 
-# trainAndGraph(
-#     network,
-#     training_generator,
-#     testing_generator,
-#     loss_function,
-#     optimizer,
-#     num_epochs,
-#     print_interval,
-# )
+    # Visualizing the path
+    # for x_past, x_future, v_past, v_future in training_generator:
+    #     # Plot the trajectory
+    #     plot_trajectory(x_past[0], x_future[0], v_past[0], v_future[0])
+    #     break  # Only plot the first batch to avoid unnecessary looping
 
-# _, batch = next(enumerate(training_generator))
-# plt.plot(batch[0][0][0], batch[0][0][1], 'ro')
-# plt.plot(batch[1][0][0], batch[1][0][1], 'bo')
-
-# with torch.no_grad():
-#   predicted = network(batch[0])
-
-# print("past data: ", batch[0][0])
-# print("predicted path: ", predicted[0])
-# print("actual path: ", batch[1][0])
-# # plt.gca().set_aspect('equal')
-# plt.plot(predicted[0][0], predicted[0][1], 'go', mfc="none")
-
-# # plt.xlim(-2, 2)
-# # plt.ylim(-2, 2)
+    trainAndGraph(
+        network,
+        training_generator,
+        testing_generator,
+        loss_function,
+        optimizer,
+        num_epochs,
+        print_interval,
+    )

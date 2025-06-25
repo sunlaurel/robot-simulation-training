@@ -91,8 +91,8 @@ def trainAndGraph(
         if avg_loss < best_val_loss:
             best_val_loss = avg_loss
             best_model_weights = network.state_dict()  # Save weights in memory
-            save_path = f"best_weights_epoch_{epoch+1}.pth"
-            torch.save(best_model_weights, save_path)
+            save_path = "best_weight.pth"
+            torch.save(best_model_weights, save_path)  # Load weights on disk
 
         if best_model_weights is not None:
             # network.load_state_dict(best_model_weights)

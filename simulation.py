@@ -3,8 +3,6 @@ import sys
 import numpy as np
 from utils import models
 
-# TODO: change from np.vectorize to just broadcasting
-
 """ Constants """
 WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
@@ -47,13 +45,6 @@ class Agent:
         )
 
     def draw(self, surface):
-        pygame.draw.circle(
-            surface,
-            self.color,
-            (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
-            meters_to_pixels(self.radius),
-        )
-
         pygame.draw.lines(
             surface,
             color=LINE_COLOR,
@@ -62,12 +53,24 @@ class Agent:
                 np.vectorize(meters_to_pixels)(self.past_trajectory)
             ),
         )
-        
-        for i in self.past_trajectory:
+
+        for (x, y) in convert_to_tuple_list(self.past_trajectory):
             pygame.draw.circle(
                 surface,
-                
+                LINE_COLOR,
+                (
+                    int(meters_to_pixels(x)),
+                    int(meters_to_pixels(y)),
+                ),
+                radius=5,
             )
+            
+        pygame.draw.circle(
+            surface,
+            self.color,
+            (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
+            meters_to_pixels(self.radius),
+        )
 
     def update(self, x, y):
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
@@ -114,7 +117,7 @@ while running:
             running = False
 
         agent.handle_event(event)
-        
+
     # sampling positions at 0.12 sec/sample
     current_time = pygame.time.get_ticks()
     if current_time - last_sample_time >= sampling_interval_ms:
@@ -122,7 +125,13 @@ while running:
         last_sample_time = current_time
 
     # displaying the median speed of the trajectory on the screen
-    speeds = np.sum((agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:])**2, axis=0)**1/2
+    speeds = (
+        np.sum(
+            (agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:]) ** 2, axis=0
+        )
+        ** 1
+        / 2
+    )
     median_speed = np.median(speeds / 0.12)
     speed_text = f"Median speed: {median_speed:.10f} m/s"
     text_surface = font.render(speed_text, True, (0, 0, 0))

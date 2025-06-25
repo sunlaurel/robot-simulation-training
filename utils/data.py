@@ -9,14 +9,15 @@ import random
 
 class TrajectoryDataset(Dataset):
 
-    def __init__(self, csv_file, noise_flag=False, scale_flag=False, offset_flag=False, rotate_flag=False):
+    def __init__(self, csv_data, noise_flag=False, scale_flag=False, offset_flag=False, rotate_flag=False):
         # Load the CSV data
-        csv_data = pd.read_csv(csv_file)
+        # csv_data = pd.read_csv(csv_file)
         self.N_past = 5
         self.N_future = 9
         self.person_ids = csv_data["id"].unique()
         self.position_data = {}  # mapping from id to trajectory
         self.velocity_data = {}  # mapping from id to trajectory
+        self.len = len(csv_data)
         
         # Flags for augmenting the data
         self.noise_flag = noise_flag
@@ -45,7 +46,7 @@ class TrajectoryDataset(Dataset):
 
     def __len__(self):
         # The dataset length is the number of rows in the CSV file
-        return 5601
+        return self.len
 
     def __getitem__(self, idx, noise_flag=False, scale_flag=False, offset_flag=False, rotate_flag=False):
         random_person_id = int(random.choice(self.person_ids))
@@ -66,12 +67,6 @@ class TrajectoryDataset(Dataset):
             X_future = (
               torch.stack((torch.tensor(X_future[0] - X_start[0]), torch.tensor(X_future[1] - X_start[1])))
             )
-            
-            V_start = (V_past[0][-1], V_past[1][-1])
-            V_past = torch.stack((V_past[0] - V_start[0], V_past[1] - V_start[1]))
-            V_future = (
-              torch.stack((V_future[0] - V_start[0], V_future[1] - V_start[1]))
-            )
 
         if self.scale_flag or scale_flag:
             X_past = X_past / 2
@@ -91,7 +86,7 @@ class TrajectoryDataset(Dataset):
 
         if self.noise_flag or noise_flag:
             N = np.random.rand(*X_past.shape)
-            X_past = X_past + torch.tensor(N * 0.1, dtype=torch.float)
+            X_past = torch.tensor(X_past) + torch.tensor(N * 0.1, dtype=torch.float)
         
         return X_past, X_future, V_past, V_future
 
