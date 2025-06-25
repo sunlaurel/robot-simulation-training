@@ -24,6 +24,9 @@ def train(network, data_generator, loss_function, optimizer):
 
 
 def test(network, test_loader, loss_function):
+    # deferring import
+    from training import offset_flag
+    
     network.eval()  # updates any network layers that behave differently in training and execution
     test_loss = 0
     num_batches = 0
@@ -95,7 +98,7 @@ def trainAndGraph(
             torch.save(best_model_weights, save_path)  # Load weights on disk
 
         if best_model_weights is not None:
-            # network.load_state_dict(best_model_weights)
+            network.load_state_dict(best_model_weights)
             network.load_state_dict(torch.load(save_path, weights_only=True))
 
         test_loss = test(network, testing_generator, loss_function)

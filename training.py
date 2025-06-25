@@ -12,10 +12,10 @@ past_steps = 5
 future_steps = 9
 
 # Setting the flags
-offset_flag = False
+offset_flag = True
 rotate_flag = False
 noise_flag = False
-scale_flag = True
+scale_flag = False
 
 # Splitting the data 80/20, just cutting at 80% of the data
 csv_file = "./training-data/crowd_data.csv"

@@ -6,7 +6,16 @@ from tqdm import tqdm
 import torch
 import numpy as np
 import random
+from sklearn.model_selection import train_test_split
 
+def GenTrainTestDatasets(csv_path):
+        csv_data = pd.read_csv(csv_path)
+        person_ids = csv_data["id"].unique()
+        train_ids, test_ids = train_test_split(person_ids , test_size=0.2, random_state=2244)
+        train_dataset = TrajectoryDataset(csv_data, train_ids)
+        test_dataset = TrajectoryDataset(csv_data, test_ids)
+        return train_dataset, test_dataset
+    
 class TrajectoryDataset(Dataset):
 
     def __init__(self, csv_data, noise_flag=False, scale_flag=False, offset_flag=False, rotate_flag=False):
@@ -103,7 +112,6 @@ class TrajectoryDataset(Dataset):
 
 
 def plot_trajectory(x_past, x_future, v_past, v_future):
-    # plt.figure(figsize=(8, 6))
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     x_past_coords = x_past[0, :].numpy()
     y_past_coords = x_past[1, :].numpy()

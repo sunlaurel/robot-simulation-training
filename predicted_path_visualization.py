@@ -1,5 +1,5 @@
 from utils import *
-from train import testing_data, network
+from training import testing_data, network
 
 
 def plot_predicted_trajectory(
@@ -75,7 +75,7 @@ def plot_predicted_trajectory(
 
 
 if __name__ == "__main__":
-    save_path = "./best-weights/best_weight_scale.pth"
+    save_path = "./best-weights/best_weight_offset.pth"
     network = network
     network.load_state_dict(torch.load(save_path))
     

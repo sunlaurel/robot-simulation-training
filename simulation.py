@@ -3,6 +3,12 @@ import sys
 import numpy as np
 from utils import models
 
+# TODO: implement code that zach sent me
+# TODO: finish training the rest of the models
+# TODO: render the predicted path on the screen now
+# TODO: implement it so it continuous predicts future positions
+# TODO: finish this before zach comes in!!!
+
 """ Constants """
 WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
@@ -48,6 +54,7 @@ class Agent:
         pygame.draw.lines(
             surface,
             color=LINE_COLOR,
+            width=2,
             closed=False,
             points=convert_to_tuple_list(
                 np.vectorize(meters_to_pixels)(self.past_trajectory)
@@ -124,7 +131,7 @@ while running:
         agent.update(agent.pos[0], agent.pos[1])
         last_sample_time = current_time
 
-    # displaying the median speed of the trajectory on the screen
+    # calculating the speed of the agent
     speeds = (
         np.sum(
             (agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:]) ** 2, axis=0
@@ -132,13 +139,25 @@ while running:
         ** 1
         / 2
     )
+    
+    # rendering the speed and position on screen
     median_speed = np.median(speeds / 0.12)
-    speed_text = f"Median speed: {median_speed:.10f} m/s"
-    text_surface = font.render(speed_text, True, (0, 0, 0))
-    text_rect = text_surface.get_rect(
-        bottomright=(meters_to_pixels(WIDTH) - 20, meters_to_pixels(HEIGHT) - 10)
+    speed_text = f"Median speed(m/s): {median_speed:.5f}"
+    pos_text = f"Position(m): ({agent.pos[0]:.2f}, {agent.pos[1]:.2f})"
+    
+    text_surface_speed = font.render(speed_text, True, (0, 0, 0))
+    text_surface_pos = font.render(pos_text, True, (0, 0, 0))
+    
+    text_rect_speed = text_surface_speed.get_rect(
+        bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 20)
     )
-    screen.blit(text_surface, text_rect)
+    text_rect_pos = text_surface_pos.get_rect(
+        bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 50)
+    )
+    
+    # screen.blit(text_surface_speed, text_speed_rect)
+    # screen.blit(text_surface_pos, text_pos_rect)
+    screen.blits(((text_surface_speed, text_rect_speed), (text_surface_pos, text_rect_pos)))
 
     agent.draw(screen)
 
