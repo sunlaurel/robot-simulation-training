@@ -75,7 +75,7 @@ def plot_predicted_trajectory(
 
 
 if __name__ == "__main__":
-    save_path = "best_weight.pth"
+    save_path = "./best-weights/best_weight_scale.pth"
     network = network
     network.load_state_dict(torch.load(save_path))
     

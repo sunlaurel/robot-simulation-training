@@ -4,7 +4,7 @@ from train_helper import *
 # TODO: make sure that the predicted velocities are converted to float tensors instead of double tensors
 
 # Training parameters
-num_epochs = 100
+num_epochs = 200
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -12,7 +12,7 @@ past_steps = 5
 future_steps = 9
 
 # Setting the flags
-offset_flag = True
+offset_flag = False
 rotate_flag = False
 noise_flag = False
 scale_flag = True
@@ -68,3 +68,5 @@ if __name__ == "__main__":
         num_epochs,
         print_interval,
     )
+    
+    
