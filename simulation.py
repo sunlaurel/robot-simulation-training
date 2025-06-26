@@ -33,30 +33,42 @@ def convert_to_tuple_list(lst):
 
 def T(X_past, X_current, offset=True, scale=True):
     """Transforms the data"""
+    X_update = X_past.copy()
     if offset:
-        X_past = torch.stack(
+        # X_past[0] = X_past[0] - X_current[0]
+        # X_past[1] = X_past[1] - X_current[1]
+        
+        X_update = torch.stack(
             (
-                torch.tensor(X_past[0] - X_current[0]),
-                torch.tensor(X_past[1] - X_current[1]),
+                torch.tensor(np.array(X_past[0] - X_current[0], dtype=float)),
+                torch.tensor(np.array(X_past[1] - X_current[1], dtype=float)),
             )
         )
 
     if scale:
-        X_past /= 2
+        X_update /= 2
+        
+    return X_update
 
 
 def T_inv(X_future, X_current, offset=True, scale=True):
     """Reverses the transformation to display on screen"""
+    X_update = X_future
     if scale:
-        X *= 2
+        X_future *= 2
 
     if offset:
-        X_future = torch.stack(
+        # X_future[0] = X_future[0] + X_current[0]
+        # X_future[1] = X_future[1] + X_current[1]
+        
+        X_update = torch.stack(
             (
                 torch.tensor(X_future[0] + X_current[0]),
                 torch.tensor(X_future[1] + X_current[1]),
             )
         )
+        
+    return X_update
 
 
 """ Person Agent Class """
@@ -70,16 +82,16 @@ class Agent:
         self.offset = [0, 0]
         self.past_trajectory = np.array(
             (np.full(N_past, x), np.full(N_past, y)),
-            dtype=object,  # storing past trajectories
+            dtype=float,  # storing past trajectories
         )
         self.future_trajectory = np.array(
             (np.full(N_future, x), np.full(N_future, y)),
-            dtype=object,  # storing future trajectories
+            dtype=float,  # storing future trajectories
         )
 
         # initializing the model
-        self.model = models.MultiLayer(4 * N_past, 100, 100, N_future * 4)
-        save_path = "./best-weights/best_weight_offset.pth"
+        self.model = models.MultiLayer(2 * N_past, 100, 100, N_future * 2)
+        save_path = "./best-weights/best_weight_rotate.pth"
         self.model.load_state_dict(torch.load(save_path, weights_only=True))
 
     def draw(self, surface):
@@ -89,6 +101,13 @@ class Agent:
         Args:
             surface (surface): the surface that the components will be drawn on
         """
+        # Draws the agent on the screen as a blue circle
+        pygame.draw.circle(
+            surface,
+            (0, 0, 255),
+            (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
+            meters_to_pixels(self.radius),
+        )
         
         # Draws a red line for the agent's past trajectory
         pygame.draw.lines(
@@ -125,14 +144,6 @@ class Agent:
                 radius=5,
             )
 
-        # Draws the agent on the screen as a blue circle
-        pygame.draw.circle(
-            surface,
-            (0, 0, 255),
-            (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
-            meters_to_pixels(self.radius),
-        )
-
     def update(self, x, y):
         """When updating, it updates its past trajectory and then predicts a new path
 
@@ -140,14 +151,23 @@ class Agent:
             x (int): the new x position (in meters) that the agent is located on the screen
             y (int): the new y position (in meters) of the agent's location on the screen
         """
+        # # calculating past velocity
+        # past_velocity = (self.past_trajectory[:, :-1] - self.past_trajectory[:, 1:]) / 0.12
+        # past_velocity = np.append(past_velocity, ((self.past_trajectory[:, -1] - [x, y]) / 0.12).T[:, None], axis=1)
+        print("before update:", self.past_trajectory)
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
+        print("after update:", self.past_trajectory)
 
-        # predicting the future paths with the updated past trajectory
-        X_ego_past = T(self.past_trajectory[:2], self.pos)
-        X_ego_future = self.model(X_ego_past)
-        self.future_trajectory = T_inv(X_ego_future, self.pos)
+        # # predicting the future paths with the updated past trajectory
+        # past_trajectory = torch.cat((torch.tensor(self.past_trajectory), torch.tensor(past_velocity)), dim=0)
+        # X_ego_future = self.model(X_ego_past.unsqueeze(0))
+        # self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)[:2]
+        
+        X_ego_past = T(self.past_trajectory, self.pos)
+        X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
+        self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -169,18 +189,18 @@ class Agent:
 
 
 """ Initializing the game + setup """
-pygame.init()
-screen = pygame.display.set_mode((meters_to_pixels(WIDTH), meters_to_pixels(HEIGHT)))
-pygame.display.set_caption("Trajectory Prediction Visualizer")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 24)
-agent = Agent(x=2, y=5, N_past=5, N_future=9)
-sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
-last_sample_time = 0
-
-
-""" Main Loop """
 if __name__ == "__main__":
+    pygame.init()
+    screen = pygame.display.set_mode((meters_to_pixels(WIDTH), meters_to_pixels(HEIGHT)))
+    pygame.display.set_caption("Trajectory Prediction Visualizer")
+    clock = pygame.time.Clock()
+    font = pygame.font.SysFont("Arial", 24)
+    agent = Agent(x=2, y=5, N_past=5, N_future=9)
+    sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
+    last_sample_time = 0
+
+
+    """ Main Loop """
     running = True
     while running:
         screen.fill(BG_COLOR)

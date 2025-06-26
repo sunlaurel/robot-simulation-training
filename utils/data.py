@@ -25,16 +25,10 @@ class TrajectoryDataset(Dataset):
         self.position_data = {}  # mapping from id to trajectory
         self.velocity_data = {}  # mapping from id to trajectory
         self.len = len(csv_data)
-        
-        # # Flags for augmenting the data
-        # self.noise_flag = noise_flag
-        # self.scale_flag = scale_flag
-        # self.offset_flag = offset_flag
-        # self.rotate_flag = rotate_flag
 
         self.person_ids = split_ids        
         self.position_data = {} # mapping from id to trajectory
-        self.velocity_data = {} # mapping from id to trajectory
+        # self.velocity_data = {} # mapping from id to trajectory
         for person_id in tqdm(self.person_ids, total = len(self.person_ids), dynamic_ncols=True):
             trajdata = csv_data[csv_data["id"] == person_id].sort_values(by="time")
             if len(trajdata) < self.N_past + self.N_future:
@@ -49,7 +43,7 @@ class TrajectoryDataset(Dataset):
         # The dataset length is the number of rows in the CSV file
         return self.len
 
-    def __getitem__(self, idx, noise_flag=False, scale_flag=False, offset_flag=False, rotate_flag=False):
+    def __getitem__(self, idx):
         random_person_id = int(random.choice(self.person_ids))
         X = self.position_data[random_person_id]
         V = self.velocity_data[random_person_id]
@@ -60,36 +54,8 @@ class TrajectoryDataset(Dataset):
         X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future]
         V_past = V[:, random_frame - self.N_past + 1 : random_frame + 1]
         V_future = V[:, random_frame + 1 : random_frame + 1 + self.N_future]
-
-        # # Data augmentation
-        # if self.offset_flag or offset_flag:
-        #     X_start = (X_past[0][-1], X_past[1][-1])
-        #     X_past = torch.stack((torch.tensor(X_past[0] - X_start[0]), torch.tensor(X_past[1] - X_start[1])))
-        #     X_future = (
-        #       torch.stack((torch.tensor(X_future[0] - X_start[0]), torch.tensor(X_future[1] - X_start[1])))
-        #     )
-
-        # if self.scale_flag or scale_flag:
-        #     X_past = X_past / 2
-        #     X_future = X_future / 2
-        #     V_past = V_past / 2
-        #     V_future = V_future / 2
-
-        # if self.rotate_flag or rotate_flag:
-        #     rand_angle = random.uniform(-np.pi, np.pi)
-        #     rotate = lambda x: torch.tensor(
-        #         [[torch.cos(x), -torch.sin(x)], [torch.sin(x), torch.cos(x)]]
-        #     )
-        #     X_past = rotate(torch.tensor(rand_angle)) @ X_past
-        #     X_future = rotate(torch.tensor(rand_angle)) @ X_future
-        #     V_past = rotate(torch.tensor(rand_angle)) @ V_past
-        #     V_future = rotate(torch.tensor(rand_angle)) @ V_future
-
-        # if self.noise_flag or noise_flag:
-        #     N = np.random.rand(*X_past.shape)
-        #     X_past = torch.tensor(X_past) + torch.tensor(N * 0.1, dtype=torch.float)
         
-        return X_past, X_future, V_past, V_future
+        return X_past, X_future#, V_past, V_future
 
         # # Convert past and future points to tensors
         # past_x = torch.tensor(past_points.iloc[:, 0].values, dtype=torch.float32)
@@ -103,7 +69,7 @@ class TrajectoryDataset(Dataset):
         # return x_trajectory, y_trajectory
 
 
-def plot_trajectory(x_past, x_future, v_past, v_future):
+def plot_trajectory(x_past, x_future, v_past=None, v_future=None):
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     x_past_coords = x_past[0, :].numpy()
     y_past_coords = x_past[1, :].numpy()

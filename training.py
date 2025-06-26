@@ -6,12 +6,12 @@ num_epochs = 300
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
-past_steps = 5
-future_steps = 9
+past_steps = 10
+future_steps = 10
 
 # Setting the flags
-offset = True
-rotate = False
+offset = False
+rotate = True
 add_noise = False
 scale = False
 
@@ -19,7 +19,7 @@ scale = False
 training_data, testing_data = GenTrainTestDatasets("./training-data/crowd_data.csv")
 
 # Set optimizer (adam) and loss function (mse)
-network = models.MultiLayer(4 * past_steps, 100, 100, future_steps * 4)
+network = models.MultiLayer(2 * past_steps, 100, 100, 2 * future_steps)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     print("Loaded Data")
 
-    # # Visualizing the path
+    # Visualizing the path
     # for x_past, x_future, v_past, v_future in training_generator:
     #     # Plot the trajectory
     #     plot_trajectory(x_past[0], x_future[0], v_past[0], v_future[0])

@@ -14,13 +14,14 @@ def T_train(
             (
                 torch.tensor(X_past[:, 0] - X_start[0]),
                 torch.tensor(X_past[:, 1] - X_start[1]),
-            )
+            ), dim=1
         )
+        
         X_future = torch.stack(
             (
                 torch.tensor(X_future[:, 0] - X_start[0]),
                 torch.tensor(X_future[:, 1] - X_start[1]),
-            )
+            ), dim=1
         )
 
     if scale:
@@ -32,12 +33,14 @@ def T_train(
         rotate = lambda x: torch.tensor(
             [[torch.cos(x), -torch.sin(x)], [torch.sin(x), torch.cos(x)]]
         )
-        X_past = rotate(torch.tensor(angle)) @ X_past
-        X_future = rotate(torch.tensor(angle)) @ X_future
+        X_past = rotate(torch.tensor(angle)) @ X_past.float()
+        X_future = rotate(torch.tensor(angle)) @ X_future.float()
 
     if add_noise:
         N = np.random.rand(*X_past.shape)
         X_past = torch.tensor(X_past) + torch.tensor(N * 0.1, dtype=torch.float)
+
+    return X_past, X_future
 
 
 def T_test(X_past, X_future, offset=True, scale=True):
@@ -48,18 +51,21 @@ def T_test(X_past, X_future, offset=True, scale=True):
             (
                 torch.tensor(X_past[:, 0] - X_start[0]),
                 torch.tensor(X_past[:, 1] - X_start[1]),
-            )
+            ), dim=1
         )
+        
         X_future = torch.stack(
             (
                 torch.tensor(X_future[:, 0] - X_start[0]),
                 torch.tensor(X_future[:, 1] - X_start[1]),
-            )
+            ), dim=1
         )
 
     if scale:
         X_past = X_past / 2
         X_future = X_future / 2
+
+    return X_past, X_future
 
 
 # helper functions
@@ -77,10 +83,8 @@ def train(
     avg_loss = 0
     num_batches = 0
 
-    for i, (input_pos, target_pos, input_velocity, target_velocity) in enumerate(
-        data_generator
-    ):
-        T_train(
+    for i, (input_pos, target_pos) in enumerate(data_generator):
+        input_pos, target_pos = T_train(
             input_pos,
             target_pos,
             offset=offset,
@@ -88,14 +92,17 @@ def train(
             add_noise=add_noise,
             rotate=rotate,
         )
+        
         optimizer.zero_grad()  # Gradients need to be reset each batch
-        prediction = network(
-            torch.cat((input_pos.float(), input_velocity.float()), dim=1)
-        )  # Forward pass: compute the next positions given previous positions
-
-        loss = loss_function(
-            prediction, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
-        )  # Compute the loss: difference between the output and correct result
+        prediction = network(input_pos.float())
+        # prediction = network(
+        #     torch.cat((input_pos.float(), input_velocity.float()), dim=1)
+        # )  # Forward pass: compute the next positions given previous positions
+        # breakpoint()
+        loss = loss_function(prediction, target_pos.float())
+        # loss = loss_function(
+        #     prediction, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
+        # )  # Compute the loss: difference between the output and correct result
         loss.backward()  # Backward pass: compute the gradients of the model with respect to the loss
         optimizer.step()
         avg_loss += loss.item()
@@ -114,14 +121,19 @@ def test(
     test_loss = 0
     num_batches = 0
     with torch.no_grad():
-        for input_pos, target_pos, input_velocity, target_velocity in test_loader:
-            T_test(input_pos, target_pos, offset=offset, scale=scale)
-            output = network(
-                torch.cat((input_pos.float(), input_velocity.float()), dim=1)
+        for input_pos, target_pos in test_loader:
+            input_pos, target_pos = T_test(
+                input_pos, target_pos, offset=offset, scale=scale
             )
-            test_loss += loss_function(
-                output, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
-            ).item()
+            output = network(input_pos.float())
+            # output = network(
+            #     torch.cat((input_pos.float(), input_velocity.float()), dim=1)
+            # )
+            # breakpoint()
+            test_loss += loss_function(output, target_pos.float())
+            # test_loss += loss_function(
+            #     output, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
+            # ).item()
             num_batches += 1
     return test_loss / num_batches
 
@@ -196,12 +208,12 @@ def trainAndGraph(
             best_val_loss = avg_loss
             best_model_weights = network.state_dict()  # Save weights in memory
             # TODO: modify the path to match with the flags
-            save_path = f"./best-weights/best_weight.pth"
+            save_path = f"./best-weights/best_weight_noise_rotate.pth"
             torch.save(best_model_weights, save_path)  # Load weights on disk
 
-        if best_model_weights is not None:
-            # network.load_state_dict(best_model_weights)
-            network.load_state_dict(torch.load(save_path, weights_only=True))
+        # if best_model_weights is not None:
+        #     # network.load_state_dict(best_model_weights)
+        #     network.load_state_dict(torch.load(save_path, weights_only=True))
 
         test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale
