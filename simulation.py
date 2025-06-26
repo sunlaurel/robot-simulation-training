@@ -2,17 +2,11 @@ import pygame
 import sys
 import numpy as np
 from utils import models
-
-# TODO: implement code that zach sent me
-# TODO: finish training the rest of the models
-# TODO: render the predicted path on the screen now
-# TODO: implement it so it continuous predicts future positions
-# TODO: finish this before zach comes in!!!
+import torch
 
 """ Constants """
 WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
-LINE_COLOR = (255, 0, 0)
 FPS = 30
 
 
@@ -37,23 +31,69 @@ def convert_to_tuple_list(lst):
     return pos_lst
 
 
+def T(X_past, X_current, offset=True, scale=True):
+    """Transforms the data"""
+    if offset:
+        X_past = torch.stack(
+            (
+                torch.tensor(X_past[0] - X_current[0]),
+                torch.tensor(X_past[1] - X_current[1]),
+            )
+        )
+
+    if scale:
+        X_past /= 2
+
+
+def T_inv(X_future, X_current, offset=True, scale=True):
+    """Reverses the transformation to display on screen"""
+    if scale:
+        X *= 2
+
+    if offset:
+        X_future = torch.stack(
+            (
+                torch.tensor(X_future[0] + X_current[0]),
+                torch.tensor(X_future[1] + X_current[1]),
+            )
+        )
+
+
 """ Person Agent Class """
 class Agent:
-    def __init__(self, x=2, y=5, radius=0.5, color=(0, 0, 255), N_past=17):
+    def __init__(self, x=2, y=5, radius=0.5, color=(0, 0, 255), N_past=17, N_future=17):
         self.pos = [x, y]
         self.radius = radius
-        self.color = color
         self.N_past = N_past  # default sampling the last two seconds
+        self.N_future = N_future  # default predicting two seconds into the future
         self.dragging = False
         self.offset = [0, 0]
         self.past_trajectory = np.array(
-            (np.full(N_past, x), np.full(N_past, y)), dtype=object
+            (np.full(N_past, x), np.full(N_past, y)),
+            dtype=object,  # storing past trajectories
+        )
+        self.future_trajectory = np.array(
+            (np.full(N_future, x), np.full(N_future, y)),
+            dtype=object,  # storing future trajectories
         )
 
+        # initializing the model
+        self.model = models.MultiLayer(4 * N_past, 100, 100, N_future * 4)
+        save_path = "./best-weights/best_weight_offset.pth"
+        self.model.load_state_dict(torch.load(save_path, weights_only=True))
+
     def draw(self, surface):
+        """Draws the agent on the screen, with a blue circle for the agent, a red line for the agent's past trajectory, 
+        and a green line for the agent's predicted trajectory based on the trained model
+
+        Args:
+            surface (surface): the surface that the components will be drawn on
+        """
+        
+        # Draws a red line for the agent's past trajectory
         pygame.draw.lines(
             surface,
-            color=LINE_COLOR,
+            color=(255, 0, 0),
             width=2,
             closed=False,
             points=convert_to_tuple_list(
@@ -61,28 +101,53 @@ class Agent:
             ),
         )
 
-        for (x, y) in convert_to_tuple_list(self.past_trajectory):
+        # Draws red dots showing the samples that were taken from the agent's past trajectory
+        for x, y in convert_to_tuple_list(self.past_trajectory):
             pygame.draw.circle(
                 surface,
-                LINE_COLOR,
+                (255, 0, 0),
                 (
                     int(meters_to_pixels(x)),
                     int(meters_to_pixels(y)),
                 ),
                 radius=5,
             )
-            
+
+        # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory 
+        for x, y in convert_to_tuple_list(self.future_trajectory):
+            pygame.draw.circle(
+                surface,
+                (0, 255, 0),
+                (
+                    int(meters_to_pixels(x)),
+                    int(meters_to_pixels(y)),
+                ),
+                radius=5,
+            )
+
+        # Draws the agent on the screen as a blue circle
         pygame.draw.circle(
             surface,
-            self.color,
+            (0, 0, 255),
             (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
             meters_to_pixels(self.radius),
         )
 
     def update(self, x, y):
+        """When updating, it updates its past trajectory and then predicts a new path
+
+        Args:
+            x (int): the new x position (in meters) that the agent is located on the screen
+            y (int): the new y position (in meters) of the agent's location on the screen
+        """
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
+
+        # predicting the future paths with the updated past trajectory
+        X_ego_past = T(self.past_trajectory[:2], self.pos)
+        X_ego_future = self.model(X_ego_past)
+        self.future_trajectory = T_inv(X_ego_future, self.pos)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -109,60 +174,63 @@ screen = pygame.display.set_mode((meters_to_pixels(WIDTH), meters_to_pixels(HEIG
 pygame.display.set_caption("Trajectory Prediction Visualizer")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 24)
-agent = Agent(x=2, y=5)
+agent = Agent(x=2, y=5, N_past=5, N_future=9)
 sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
 last_sample_time = 0
 
 
 """ Main Loop """
-running = True
-while running:
-    screen.fill(BG_COLOR)
+if __name__ == "__main__":
+    running = True
+    while running:
+        screen.fill(BG_COLOR)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-        agent.handle_event(event)
+            agent.handle_event(event)
 
-    # sampling positions at 0.12 sec/sample
-    current_time = pygame.time.get_ticks()
-    if current_time - last_sample_time >= sampling_interval_ms:
-        agent.update(agent.pos[0], agent.pos[1])
-        last_sample_time = current_time
+        # sampling positions at 0.12 sec/sample
+        current_time = pygame.time.get_ticks()
+        if current_time - last_sample_time >= sampling_interval_ms:
+            agent.update(agent.pos[0], agent.pos[1])
+            last_sample_time = current_time
 
-    # calculating the speed of the agent
-    speeds = (
-        np.sum(
-            (agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:]) ** 2, axis=0
+        # calculating the speed of the agent
+        speeds = (
+            np.sum(
+                (agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:]) ** 2,
+                axis=0,
+            )
+            ** 0.5
         )
-        ** 1
-        / 2
-    )
-    
-    # rendering the speed and position on screen
-    median_speed = np.median(speeds / 0.12)
-    speed_text = f"Median speed(m/s): {median_speed:.5f}"
-    pos_text = f"Position(m): ({agent.pos[0]:.2f}, {agent.pos[1]:.2f})"
-    
-    text_surface_speed = font.render(speed_text, True, (0, 0, 0))
-    text_surface_pos = font.render(pos_text, True, (0, 0, 0))
-    
-    text_rect_speed = text_surface_speed.get_rect(
-        bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 20)
-    )
-    text_rect_pos = text_surface_pos.get_rect(
-        bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 50)
-    )
-    
-    # screen.blit(text_surface_speed, text_speed_rect)
-    # screen.blit(text_surface_pos, text_pos_rect)
-    screen.blits(((text_surface_speed, text_rect_speed), (text_surface_pos, text_rect_pos)))
 
-    agent.draw(screen)
+        # rendering the speed and position on screen
+        median_speed = np.median(speeds / 0.12)
+        speed_text = f"Median speed(m/s): {median_speed:.5f}"
+        pos_text = f"Position(m): ({agent.pos[0]:.2f}, {agent.pos[1]:.2f})"
 
-    pygame.display.flip()
-    clock.tick(FPS)
+        text_surface_speed = font.render(speed_text, True, (0, 0, 0))
+        text_surface_pos = font.render(pos_text, True, (0, 0, 0))
 
-pygame.quit()
-sys.exit()
+        text_rect_speed = text_surface_speed.get_rect(
+            bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 20)
+        )
+        text_rect_pos = text_surface_pos.get_rect(
+            bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 50)
+        )
+
+        # screen.blit(text_surface_speed, text_speed_rect)
+        # screen.blit(text_surface_pos, text_pos_rect)
+        screen.blits(
+            ((text_surface_speed, text_rect_speed), (text_surface_pos, text_rect_pos))
+        )
+
+        agent.draw(screen)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    pygame.quit()
+    sys.exit()
