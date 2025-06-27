@@ -1,6 +1,7 @@
 from utils import *
 from training import testing_data, network, offset, add_noise, rotate, scale
 from train_helper import T_test
+from baseline_models import baseline_model, stand_model
 
 
 def plot_predicted_trajectory(x_past, x_future, x_predicted):
@@ -13,11 +14,28 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
     y_future_coords = x_future[1, :].numpy()
     x_predicted_coords = x_predicted[0, :].numpy()
     y_predicted_coords = x_predicted[1, :].numpy()
+    
+    # graphing the maintaining velocity model
+    x_baseline = baseline_model(x_past)
+    x_baseline_coords = x_baseline[0, :].numpy()
+    y_baseline_coords = x_baseline[1, :].numpy()
+    
+    # graphing the stand still model
+    x_stand = stand_model(x_past)
+    x_stand_coords = x_stand[0, :].numpy()
+    y_stand_coords = x_stand[1, :].numpy()
+    
 
     plt.plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="r")
     plt.plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="b")
     plt.plot(
         x_predicted_coords, y_predicted_coords, marker="o", linestyle="-", color="g"
+    )
+    plt.plot(
+        x_baseline_coords, y_baseline_coords, marker="o", linestyle="-", color=(0.6, 0.3, 0.9)
+    )
+    plt.plot(
+        x_stand_coords, y_stand_coords, marker="o", linestyle="-", color=(1, 0.647, 0)
     )
     plt.xlabel("x")
     plt.ylabel("y")
