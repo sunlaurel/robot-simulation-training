@@ -52,7 +52,7 @@ def T(X_past, X_current, offset=True, scale=True):
 
 def T_inv(X_future, X_current, offset=True, scale=True):
     """Reverses the transformation to display on screen"""
-    X_update = X_future.copy()
+    X_update = X_future.detach().numpy().copy()
     if scale:
         X_future *= 2
 
@@ -88,7 +88,7 @@ class Agent:
 
         # initializing the model
         self.model = models.MultiLayer(2 * N_past, 100, 100, N_future * 2)
-        save_path = "./best-weights/best_weight_rotate.pth"
+        save_path = "./best-weights/best_weight_noise_rotate.pth"
         self.model.load_state_dict(torch.load(save_path, weights_only=True))
 
     def draw(self, surface):
@@ -153,8 +153,9 @@ class Agent:
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
         
-        # Training the model on past trajectories
-        breakpoint()
+        # Passing past trajectories to model to predict future trajectories
+        # TODO: sanity check --> print out the predicted future trajectory to make sure it's actually working
+        # breakpoint()
         X_ego_past = T(self.past_trajectory, self.pos)
         X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
         self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)

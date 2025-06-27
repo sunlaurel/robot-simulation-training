@@ -72,7 +72,6 @@ def T_test(X_past, X_future, offset=True, scale=True):
     return X_past, X_future
 
 
-# helper functions
 def train(
     network,
     data_generator,
@@ -231,5 +230,5 @@ def trainAndGraph(
             logging_interval,
         )
 
-    graphLoss(epoch_counter, train_loss_history, test_loss_history)
     print("Best epoch:", best_epoch)
+    graphLoss(epoch_counter, train_loss_history, test_loss_history)

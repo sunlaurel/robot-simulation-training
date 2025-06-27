@@ -2,7 +2,7 @@ from utils import *
 from train_helper import *
 
 # Training parameters
-num_epochs = 700
+num_epochs = 1000
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -10,9 +10,9 @@ past_steps = 10
 future_steps = 10
 
 # Setting the flags
-offset = True
-rotate = False
-add_noise = False
+offset = False
+rotate = True
+add_noise = True
 scale = False
 
 # Splitting the data 80/20, just cutting at 80% of the data
