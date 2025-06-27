@@ -103,7 +103,8 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
 
 if __name__ == "__main__":
     
-    save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
+    # save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
+    save_path = "./best-weights/best_weight_offset.pth"
     print("model visualized:", save_path)
     network.load_state_dict(torch.load(save_path))
 

@@ -219,6 +219,7 @@ def trainAndGraph(
         test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale
         )
+        # load it in and compare it to the other model
         logResults(
             epoch,
             num_epochs,

@@ -1,8 +1,6 @@
 import torch
 from training import future_steps
 
-save_path = "./best-weights/best_weight_noise.pth"
-
 
 def stand_still_model(X_past):
     return X_past[:, -1].unsqueeze(1).repeat(1, 10)
