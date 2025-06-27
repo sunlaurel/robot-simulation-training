@@ -1,9 +1,9 @@
 from utils import *
-from training import testing_data, network
+from training import testing_data, network, offset, add_noise, rotate, scale
+from train_helper import T_test
 
-def plot_predicted_trajectory(
-    x_past, x_future, x_predicted
-):
+
+def plot_predicted_trajectory(x_past, x_future, x_predicted):
     """Graphs the predicted trajectory compared to the actual trajectory"""
     # fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
@@ -13,7 +13,7 @@ def plot_predicted_trajectory(
     y_future_coords = x_future[1, :].numpy()
     x_predicted_coords = x_predicted[0, :].numpy()
     y_predicted_coords = x_predicted[1, :].numpy()
-    
+
     plt.plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="r")
     plt.plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="b")
     plt.plot(
@@ -22,6 +22,7 @@ def plot_predicted_trajectory(
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title("Positions")
+    plt.show()
 
     # dt = 0.12
     # vx_past_coords = v_past[0, :].numpy()
@@ -77,22 +78,22 @@ def plot_predicted_trajectory(
     # axes[1].set_xlabel("x")
     # axes[1].set_ylabel("y")
     # axes[1].grid(True)
-    
+
     # fig.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
-    # TODO: modify the path visualization so that all variables are synced and you don't have to switch around as much
-    # TODO: modify it so that it can offset data at the center
     
-    save_path = "./best-weights/best_weight_rotate.pth"
+    save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
+    print("model visualized:", save_path)
     network.load_state_dict(torch.load(save_path))
-    
+
     data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
 
     for x_past, x_future in data_loader:
-        
+        x_past, x_future = T_test(x_past, x_future, offset=offset, scale=scale)
+
         # Plot the trajectory
         with torch.no_grad():
             # predicted = network(
@@ -108,5 +109,5 @@ if __name__ == "__main__":
             x_predicted=predicted[0:2],
             # v_predicted=predicted[2:],
         )
-        
+
         # break  # Only plot the first batch to avoid unnecessary looping

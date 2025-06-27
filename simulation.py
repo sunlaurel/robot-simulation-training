@@ -1,8 +1,9 @@
 import pygame
 import sys
 import numpy as np
-from utils import models
 import torch
+from utils import models
+from training import past_steps, future_steps
 
 """ Constants """
 WIDTH, HEIGHT = 10, 10
@@ -35,9 +36,7 @@ def T(X_past, X_current, offset=True, scale=True):
     """Transforms the data"""
     X_update = X_past.copy()
     if offset:
-        # X_past[0] = X_past[0] - X_current[0]
-        # X_past[1] = X_past[1] - X_current[1]
-        
+        # TODO: later, replace with more efficient code
         X_update = torch.stack(
             (
                 torch.tensor(np.array(X_past[0] - X_current[0], dtype=float)),
@@ -53,14 +52,12 @@ def T(X_past, X_current, offset=True, scale=True):
 
 def T_inv(X_future, X_current, offset=True, scale=True):
     """Reverses the transformation to display on screen"""
-    X_update = X_future
+    X_update = X_future.copy()
     if scale:
         X_future *= 2
 
     if offset:
-        # X_future[0] = X_future[0] + X_current[0]
-        # X_future[1] = X_future[1] + X_current[1]
-        
+        # TODO: later, replace with more efficient code
         X_update = torch.stack(
             (
                 torch.tensor(X_future[0] + X_current[0]),
@@ -73,7 +70,7 @@ def T_inv(X_future, X_current, offset=True, scale=True):
 
 """ Person Agent Class """
 class Agent:
-    def __init__(self, x=2, y=5, radius=0.5, color=(0, 0, 255), N_past=17, N_future=17):
+    def __init__(self, N_past, N_future, x=2, y=5, radius=0.5, color=(0, 0, 255)):
         self.pos = [x, y]
         self.radius = radius
         self.N_past = N_past  # default sampling the last two seconds
@@ -145,29 +142,30 @@ class Agent:
             )
 
     def update(self, x, y):
-        """When updating, it updates its past trajectory and then predicts a new path
+        """When updating, it updates its past trajectory and then predicts a new path from the trained model
 
         Args:
             x (int): the new x position (in meters) that the agent is located on the screen
             y (int): the new y position (in meters) of the agent's location on the screen
         """
-        # # calculating past velocity
-        # past_velocity = (self.past_trajectory[:, :-1] - self.past_trajectory[:, 1:]) / 0.12
-        # past_velocity = np.append(past_velocity, ((self.past_trajectory[:, -1] - [x, y]) / 0.12).T[:, None], axis=1)
-        print("before update:", self.past_trajectory)
+        # updating the past trajectories
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
-        print("after update:", self.past_trajectory)
+        
+        # Training the model on past trajectories
+        breakpoint()
+        X_ego_past = T(self.past_trajectory, self.pos)
+        X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
+        self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)
 
+        # # calculating past velocity
+        # past_velocity = (self.past_trajectory[:, :-1] - self.past_trajectory[:, 1:]) / 0.12
+        # past_velocity = np.append(past_velocity, ((self.past_trajectory[:, -1] - [x, y]) / 0.12).T[:, None], axis=1)
         # # predicting the future paths with the updated past trajectory
         # past_trajectory = torch.cat((torch.tensor(self.past_trajectory), torch.tensor(past_velocity)), dim=0)
         # X_ego_future = self.model(X_ego_past.unsqueeze(0))
         # self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)[:2]
-        
-        X_ego_past = T(self.past_trajectory, self.pos)
-        X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
-        self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -195,7 +193,7 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=2, y=5, N_past=5, N_future=9)
+    agent = Agent(x=2, y=5, N_past=past_steps, N_future=future_steps)
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
 
@@ -241,8 +239,6 @@ if __name__ == "__main__":
             bottomright=(meters_to_pixels(WIDTH) - 30, meters_to_pixels(HEIGHT) - 50)
         )
 
-        # screen.blit(text_surface_speed, text_speed_rect)
-        # screen.blit(text_surface_pos, text_pos_rect)
         screen.blits(
             ((text_surface_speed, text_rect_speed), (text_surface_pos, text_rect_pos))
         )

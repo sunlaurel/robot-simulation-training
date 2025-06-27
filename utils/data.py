@@ -3,27 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
-import torch
-import numpy as np
 import random
 from sklearn.model_selection import train_test_split
 
-def GenTrainTestDatasets(csv_path):
+def GenTrainTestDatasets(csv_path, past_steps, future_steps):
         csv_data = pd.read_csv(csv_path)
         person_ids = csv_data["id"].unique()
         train_ids, test_ids = train_test_split(person_ids, test_size=0.2, random_state=2244)
-        train_dataset = TrajectoryDataset(csv_data, train_ids)
-        test_dataset = TrajectoryDataset(csv_data, test_ids)
+        train_dataset = TrajectoryDataset(csv_data, train_ids, N_past=past_steps, N_future=future_steps)
+        test_dataset = TrajectoryDataset(csv_data, test_ids, N_past=past_steps, N_future=future_steps)
         return train_dataset, test_dataset
     
 class TrajectoryDataset(Dataset):
 
-    def __init__(self, csv_data, split_ids):
-        self.N_past = 5
-        self.N_future = 9
+    def __init__(self, csv_data, split_ids, N_past, N_future):
+        self.N_past = N_past
+        self.N_future = N_future
         self.person_ids = csv_data["id"].unique()
         self.position_data = {}  # mapping from id to trajectory
-        self.velocity_data = {}  # mapping from id to trajectory
+        # self.velocity_data = {}  # mapping from id to trajectory
         self.len = len(csv_data)
 
         self.person_ids = split_ids        
@@ -34,7 +32,7 @@ class TrajectoryDataset(Dataset):
             if len(trajdata) < self.N_past + self.N_future:
                 continue
             self.position_data[person_id] = trajdata[["x","y"]].to_numpy().T # 2 x N
-            self.velocity_data[person_id] = trajdata[["v_x","v_y"]].to_numpy().T # 2 x N
+            # self.velocity_data[person_id] = trajdata[["v_x","v_y"]].to_numpy().T # 2 x N
 
         self.person_ids = list(self.position_data.keys()) # remove people with short trajectories
 
@@ -46,14 +44,14 @@ class TrajectoryDataset(Dataset):
     def __getitem__(self, idx):
         random_person_id = int(random.choice(self.person_ids))
         X = self.position_data[random_person_id]
-        V = self.velocity_data[random_person_id]
+        # V = self.velocity_data[random_person_id]
         random_frame = int(random.randint(self.N_past, X.shape[1] - 1 - self.N_future))
 
         # Determine the indices for past and future points
         X_past = X[:, random_frame - self.N_past + 1 : random_frame + 1]
         X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future]
-        V_past = V[:, random_frame - self.N_past + 1 : random_frame + 1]
-        V_future = V[:, random_frame + 1 : random_frame + 1 + self.N_future]
+        # V_past = V[:, random_frame - self.N_past + 1 : random_frame + 1]
+        # V_future = V[:, random_frame + 1 : random_frame + 1 + self.N_future]
         
         return X_past, X_future#, V_past, V_future
 

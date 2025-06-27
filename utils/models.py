@@ -8,13 +8,13 @@ class MultiLayer(nn.Module):
     self.linear2 = nn.Linear(hidden_layer1, hidden_layer2)  # Linear layer: hidden_layer -> num_classes
     self.linear3 = nn.Linear(hidden_layer2, output_size)  # Linear layer: hidden_layer -> num_classes
 
-  def forward(self, x):              # Forward pass which defines how the layers relate the input x to the output
+  def forward(self, x, features=2):              # Forward pass which defines how the layers relate the input x to the output
     batch_size = x.size(0)           # Store the batch size before flattening
     x = x.view(batch_size, -1)       # Flatten the input x
     x = F.relu(self.linear1(x))      # Linear transform, then relu
     x = F.relu(self.linear2(x))
     out = self.linear3(x)
-    out = out.view(batch_size, 2, -1) # Reshape the output to (batch_size, 2, future_time_steps)
+    out = out.view(batch_size, features, -1) # Reshape the output to (batch_size, 2, future_time_steps)
     return out
 
 class MultiLayer2(nn.Module):

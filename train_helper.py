@@ -14,14 +14,16 @@ def T_train(
             (
                 torch.tensor(X_past[:, 0] - X_start[0]),
                 torch.tensor(X_past[:, 1] - X_start[1]),
-            ), dim=1
+            ),
+            dim=1,
         )
-        
+
         X_future = torch.stack(
             (
                 torch.tensor(X_future[:, 0] - X_start[0]),
                 torch.tensor(X_future[:, 1] - X_start[1]),
-            ), dim=1
+            ),
+            dim=1,
         )
 
     if scale:
@@ -51,14 +53,16 @@ def T_test(X_past, X_future, offset=True, scale=True):
             (
                 torch.tensor(X_past[:, 0] - X_start[0]),
                 torch.tensor(X_past[:, 1] - X_start[1]),
-            ), dim=1
+            ),
+            dim=1,
         )
-        
+
         X_future = torch.stack(
             (
                 torch.tensor(X_future[:, 0] - X_start[0]),
                 torch.tensor(X_future[:, 1] - X_start[1]),
-            ), dim=1
+            ),
+            dim=1,
         )
 
     if scale:
@@ -84,6 +88,7 @@ def train(
     num_batches = 0
 
     for i, (input_pos, target_pos) in enumerate(data_generator):
+        # breakpoint()
         input_pos, target_pos = T_train(
             input_pos,
             target_pos,
@@ -92,7 +97,7 @@ def train(
             add_noise=add_noise,
             rotate=rotate,
         )
-        
+
         optimizer.zero_grad()  # Gradients need to be reset each batch
         prediction = network(input_pos.float())
         # prediction = network(
@@ -183,6 +188,7 @@ def trainAndGraph(
     add_noise=False,
     rotate=False,
 ):
+    best_epoch = 0
     best_model_weights = None
     best_val_loss = float("inf")
     save_path = None
@@ -206,14 +212,10 @@ def trainAndGraph(
 
         if avg_loss < best_val_loss:
             best_val_loss = avg_loss
+            best_epoch = epoch
             best_model_weights = network.state_dict()  # Save weights in memory
-            # TODO: modify the path to match with the flags
-            save_path = f"./best-weights/best_weight_noise_rotate.pth"
+            save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
             torch.save(best_model_weights, save_path)  # Load weights on disk
-
-        # if best_model_weights is not None:
-        #     # network.load_state_dict(best_model_weights)
-        #     network.load_state_dict(torch.load(save_path, weights_only=True))
 
         test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale
@@ -230,3 +232,4 @@ def trainAndGraph(
         )
 
     graphLoss(epoch_counter, train_loss_history, test_loss_history)
+    print("Best epoch:", best_epoch)

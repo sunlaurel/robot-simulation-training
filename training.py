@@ -2,7 +2,7 @@ from utils import *
 from train_helper import *
 
 # Training parameters
-num_epochs = 300
+num_epochs = 700
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -10,15 +10,18 @@ past_steps = 10
 future_steps = 10
 
 # Setting the flags
-offset = False
-rotate = True
+offset = True
+rotate = False
 add_noise = False
 scale = False
 
 # Splitting the data 80/20, just cutting at 80% of the data
-training_data, testing_data = GenTrainTestDatasets("./training-data/crowd_data.csv")
+training_data, testing_data = GenTrainTestDatasets(
+    "./training-data/crowd_data.csv", past_steps=past_steps, future_steps=future_steps
+)
 
 # Set optimizer (adam) and loss function (mse)
+# breakpoint()
 network = models.MultiLayer(2 * past_steps, 100, 100, 2 * future_steps)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
@@ -53,7 +56,5 @@ if __name__ == "__main__":
         offset=offset,
         add_noise=add_noise,
         scale=scale,
-        rotate=rotate
+        rotate=rotate,
     )
-    
-    
