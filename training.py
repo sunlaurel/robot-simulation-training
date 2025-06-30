@@ -2,7 +2,7 @@ from utils import *
 from train_helper import *
 
 # Training parameters
-num_epochs = 100
+num_epochs = 700
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -29,6 +29,8 @@ loss_function = nn.L1Loss()
 
 if __name__ == "__main__":
     # Load the data, and split it into batches
+    
+    
     training_generator = torch.utils.data.DataLoader(
         training_data, batch_size=batch_size, shuffle=True
     )

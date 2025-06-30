@@ -10,3 +10,8 @@ from tqdm import tqdm
 
 from .models import *
 from .data import *
+
+# ignoring warnings
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)

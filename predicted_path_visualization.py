@@ -3,6 +3,8 @@ from training import testing_data, network, offset, add_noise, rotate, scale
 from train_helper import T_test
 from baseline_models import baseline_model, stand_model
 
+# later, change it so that you have future steps in the config file
+
 
 def plot_predicted_trajectory(x_past, x_future, x_predicted):
     """Graphs the predicted trajectory compared to the actual trajectory"""
@@ -14,17 +16,16 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
     y_future_coords = x_future[1, :].numpy()
     x_predicted_coords = x_predicted[0, :].numpy()
     y_predicted_coords = x_predicted[1, :].numpy()
-    
+
     # graphing the maintaining velocity model
     x_baseline = baseline_model(x_past)
     x_baseline_coords = x_baseline[0, :].numpy()
     y_baseline_coords = x_baseline[1, :].numpy()
-    
+
     # graphing the stand still model
     x_stand = stand_model(x_past)
     x_stand_coords = x_stand[0, :].numpy()
     y_stand_coords = x_stand[1, :].numpy()
-    
 
     plt.plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="r")
     plt.plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="b")
@@ -40,6 +41,15 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title("Positions")
+    plt.legend(
+        [
+            "Past trajectory",
+            "Future trajectory",
+            "Predicted trajectory",
+            "Maintain velocity baseline trajectory",
+            "Standing still baseline trajectory",
+        ]
+    )
     plt.show()
 
     # dt = 0.12
@@ -102,10 +112,15 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
 
 
 if __name__ == "__main__":
-    
-    # save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
-    save_path = "./best-weights/best_weight_offset.pth"
-    print("model visualized:", save_path)
+    # Setting the flags
+    offset_flag = offset
+    scale_flag = scale
+    noise_flag = add_noise
+    rotate_flag = rotate
+
+    save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}.pth"
+    # save_path = "./best-weights/best_weight_offset.pth"
+    print("Model visualized:", save_path)
     network.load_state_dict(torch.load(save_path))
 
     data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
