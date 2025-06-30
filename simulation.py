@@ -68,6 +68,7 @@ def T_inv(X_future, X_current, offset=True, scale=True):
         
     return X_update
 
+# TODO: add arrow keys to ajust noise
 
 """ Person Agent Class """
 class Agent:

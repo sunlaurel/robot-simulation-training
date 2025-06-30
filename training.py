@@ -1,6 +1,11 @@
 from utils import *
 from train_helper import *
 
+
+# TODO: NEED TO FIGURE OUT HOW TO REMOVE CIRCULAR IMPORTS
+# TODO: ORGANIZE IMPORT ORGANIZATION
+
+
 # Training parameters
 num_epochs = 700
 print_interval = 1
@@ -22,7 +27,7 @@ training_data, testing_data = GenTrainTestDatasets(
 
 # Set optimizer (adam) and loss function (mse)
 # breakpoint()
-network = models.MultiLayer(2 * past_steps, 100, 100, 2 * future_steps)
+network = MultiLayer(2 * past_steps, 100, 100, 2 * future_steps)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
 

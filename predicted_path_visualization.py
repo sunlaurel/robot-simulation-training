@@ -121,7 +121,7 @@ if __name__ == "__main__":
     save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}.pth"
     # save_path = "./best-weights/best_weight_offset.pth"
     print("Model visualized:", save_path)
-    network.load_state_dict(torch.load(save_path))
+    network.load_state_dict(torch.load(save_path, weights_only=True))
 
     data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
 
