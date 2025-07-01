@@ -68,25 +68,11 @@ def T_inv(X_future, X_current, offset=True, scale=True):
     return X_update
 
 
-# TODO: add arrow keys to ajust noise
-def on_keydown():
-    epsilon = 0.01
-    sigma_max = 0.05
-    sigma = min(sigma + epsilon, sigma_max)
-    N = np.random.randn()
-    
-
-def on_keyup():
-    epsilon = 0.01
-    sigma = max(sigma, sigma - epsilon)
-    
-
-
 """ Person Agent Class """
 class Agent:
     
     
-    def __init__(self, N_past, N_future, x=2, y=5, radius=0.5, color=(0, 0, 255), epsilon=0.05):
+    def __init__(self, N_past, N_future, x=2, y=5, radius=0.5, color=(0, 0, 255), epsilon=0.01, sigma_max=0.5):
         self.pos = [x, y]
         self.radius = radius
         self.N_past = N_past  # default sampling the last two seconds
@@ -110,7 +96,7 @@ class Agent:
         # defining the parameters for adding noise to the past trajectory
         self.sigma = 0
         self.epsilon = epsilon
-        self.N_noise = np.random.randn()
+        self.sigma_max = sigma_max
 
 
     def draw(self, surface):
@@ -199,6 +185,12 @@ class Agent:
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
 
+        # adding noise to the past trajectories
+        # breakpoint()
+        N = np.random.randn(2, self.N_past) * self.sigma
+        self.past_trajectory = self.past_trajectory + N
+        # breakpoint()
+
         # Passing past trajectories to model to predict future trajectories
         X_ego_past = T(self.past_trajectory, self.pos)
         X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
@@ -212,6 +204,17 @@ class Agent:
         # X_ego_future = self.model(X_ego_past.unsqueeze(0))
         # self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)[:2]
 
+    
+    # Adding event handlers for arrow keys to ajust noise
+    def on_arrow_down(self):
+        self.sigma = min(self.sigma - self.epsilon, self.sigma_max)
+        print("sigma gone down:", self.sigma)
+        
+
+    def on_arrow_up(self):
+        self.sigma = max(0, self.sigma + self.epsilon)
+        print("sigma gone up:", self.sigma)
+
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -224,9 +227,10 @@ class Agent:
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
         elif event.type == pygame.KEYDOWN:
-            on_keydown
-        elif event.type == pygame.KEYUP:
-            pass
+            if event.key == pygame.K_UP:
+                self.on_arrow_up()
+            elif event.key == pygame.K_DOWN:
+                self.on_arrow_down()
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
                 mouse_x, mouse_y = event.pos
