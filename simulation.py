@@ -11,7 +11,6 @@ WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
 
-
 """ Functions """
 # TODO: put these in a different script later on
 def meters_to_pixels(m):
@@ -65,14 +64,29 @@ def T_inv(X_future, X_current, offset=True, scale=True):
                 torch.tensor(X_future[1] + X_current[1]),
             )
         )
-        
+
     return X_update
 
+
 # TODO: add arrow keys to ajust noise
+def on_keydown():
+    epsilon = 0.01
+    sigma_max = 0.05
+    sigma = min(sigma + epsilon, sigma_max)
+    N = np.random.randn()
+    
+
+def on_keyup():
+    epsilon = 0.01
+    sigma = max(sigma, sigma - epsilon)
+    
+
 
 """ Person Agent Class """
 class Agent:
-    def __init__(self, N_past, N_future, x=2, y=5, radius=0.5, color=(0, 0, 255)):
+    
+    
+    def __init__(self, N_past, N_future, x=2, y=5, radius=0.5, color=(0, 0, 255), epsilon=0.05):
         self.pos = [x, y]
         self.radius = radius
         self.N_past = N_past  # default sampling the last two seconds
@@ -92,6 +106,12 @@ class Agent:
         self.model = models.MultiLayer(2 * N_past, 100, 100, N_future * 2)
         save_path = "./best-weights/best_weight_offset.pth"
         self.model.load_state_dict(torch.load(save_path, weights_only=True))
+        
+        # defining the parameters for adding noise to the past trajectory
+        self.sigma = 0
+        self.epsilon = epsilon
+        self.N_noise = np.random.randn()
+
 
     def draw(self, surface):
         """Draws the agent on the screen, with a blue circle for the agent, a red line for the agent's past trajectory, 
@@ -100,7 +120,7 @@ class Agent:
         Args:
             surface (surface): the surface that the components will be drawn on
         """
-        
+
         # Draws the agent on the screen as a blue circle
         pygame.draw.circle(
             surface,
@@ -108,21 +128,7 @@ class Agent:
             (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
             meters_to_pixels(self.radius),
         )
-        
-        
-        # # Draws the baseline model's prediction
-        # for x, y in convert_to_tuple_list(baseline_model(self.past_trajectory)):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (255, 0, 255),
-        #         (
-        #             int(meters_to_pixels(x)),
-        #             int(meters_to_pixels(y)),
-        #         ),
-        #         radius=5,
-        #     )
-        
-        
+
         # Draws a red line for the agent's past trajectory
         pygame.draw.lines(
             surface,
@@ -146,7 +152,7 @@ class Agent:
                 radius=5,
             )
 
-        # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory 
+        # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory
         for i in range(0, 3):
             pygame.draw.circle(
                 surface,
@@ -157,7 +163,7 @@ class Agent:
                 ),
                 radius=5,
             )
-        
+
         for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
             pygame.draw.circle(
                 surface,
@@ -168,7 +174,7 @@ class Agent:
                 ),
                 radius=5,
             )
-        
+
         # for x, y in convert_to_tuple_list(self.future_trajectory):
         #     pygame.draw.circle(
         #         surface,
@@ -179,6 +185,7 @@ class Agent:
         #         ),
         #         radius=5,
         #     )
+
 
     def update(self, x, y):
         """When updating, it updates its past trajectory and then predicts a new path from the trained model
@@ -191,10 +198,8 @@ class Agent:
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
         self.past_trajectory[0][-1] = x
         self.past_trajectory[1][-1] = y
-        
+
         # Passing past trajectories to model to predict future trajectories
-        # TODO: sanity check --> print out the predicted future trajectory to make sure it's actually working
-        # breakpoint()
         X_ego_past = T(self.past_trajectory, self.pos)
         X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
         self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)
@@ -207,6 +212,7 @@ class Agent:
         # X_ego_future = self.model(X_ego_past.unsqueeze(0))
         # self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)[:2]
 
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
@@ -217,6 +223,10 @@ class Agent:
                 self.offset = [dx, dy]
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
+        elif event.type == pygame.KEYDOWN:
+            on_keydown
+        elif event.type == pygame.KEYUP:
+            pass
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging:
                 mouse_x, mouse_y = event.pos

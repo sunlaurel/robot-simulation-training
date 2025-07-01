@@ -7,7 +7,7 @@ from train_helper import *
 
 
 # Training parameters
-num_epochs = 700
+num_epochs = 1100
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100

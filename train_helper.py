@@ -149,7 +149,6 @@ def test(
             # ).item()
             num_batches += 1
     # return test_loss / num_batches
-    breakpoint()
     return (
         test_loss / num_batches,
         stand_test_loss / num_batches,
