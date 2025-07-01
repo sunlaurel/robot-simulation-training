@@ -5,7 +5,7 @@ from train_helper import T_test
 import torch
 
 
-save_path = "./best-weights/best_weight_offset.pth"
+save_path = "./best-weights/best_weight_noise_scale_offset(0.1).pth"
 network = MultiLayer(2*10, 100, 100, 2*10)
 network.load_state_dict(torch.load(save_path, weights_only=True))
 
@@ -15,15 +15,21 @@ predicted_loss = 0
 stand_loss = 0
 baseline_loss = 0
 
+
+def metric_test_loss(X_past, X_future, model):
+    metric_predicted = model(X_past.float() * 0.5) / 0.5
+    loss = loss_function(X_future, metric_predicted.float())
+    return loss
+
+
 with torch.no_grad():
     # breakpoint()
     for input, expected in test_generator:
         input, expected = T_test(input, offset=True, scale=False, X_future=expected)
-        predicted = network(input.float())
         stand_predicted = stand_model(input.float())
         baseline_predicted = baseline_model(input.float())
 
-        predicted_loss += loss_function(expected, predicted.float())
+        predicted_loss += metric_test_loss(input, expected, network)
         stand_loss += loss_function(expected, stand_predicted.float())
         baseline_loss += loss_function(expected, baseline_predicted.float())
 

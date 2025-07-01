@@ -27,6 +27,11 @@ def T_train(
             dim=1,
         )
 
+    if add_noise:
+        sigma = 0.1
+        N = np.random.rand(*X_past.shape) * sigma
+        X_past = torch.tensor(X_past) + torch.tensor(N * 0.1, dtype=torch.float)
+
     if scale:
         X_past = X_past / 2
         X_future = X_future / 2
@@ -38,10 +43,6 @@ def T_train(
         )
         X_past = rotate(torch.tensor(angle)) @ X_past.float()
         X_future = rotate(torch.tensor(angle)) @ X_future.float()
-
-    if add_noise:
-        N = np.random.rand(*X_past.shape)
-        X_past = torch.tensor(X_past) + torch.tensor(N * 0.1, dtype=torch.float)
 
     return X_past, X_future
 
@@ -225,7 +226,6 @@ def trainAndGraph(
     best_epoch = 0
     best_model_weights = None
     best_val_loss = float("inf")
-    save_path = None
 
     # Arrays to store training history
     test_loss_history = []
