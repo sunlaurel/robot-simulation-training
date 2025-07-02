@@ -1,15 +1,12 @@
 import pygame
 import sys
-import numpy as np
-import torch
-from utils import models
-from training import past_steps, future_steps
-# from baseline_models import baseline_model
+from utils import *
 
 """ Constants """
 WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
+
 
 """ Functions """
 # TODO: put these in a different script later on
@@ -73,8 +70,6 @@ class Agent:
 
     def __init__(
         self,
-        N_past,
-        N_future,
         x=2,
         y=5,
         radius=0.5,
@@ -83,38 +78,37 @@ class Agent:
     ):
         self.pos = [x, y]
         self.radius = radius
-        self.N_past = N_past  # default sampling the last two seconds
-        self.N_future = N_future  # default predicting two seconds into the future
         self.dragging = False
         self.offset = [0, 0]
-        self.past_trajectory = np.array(
-            (np.full(N_past, x), np.full(N_past, y)),
-            dtype=float,  # storing past trajectories
-        )
-        self.future_trajectory = np.array(
-            (np.full(N_future, x), np.full(N_future, y)),
-            dtype=float,  # storing future trajectories
-        )
-
-        # initializing the model
-        self.model = models.MultiLayer(2 * N_past, 100, 100, N_future * 2)
-        save_path = "./best-weights/best_weight_noise_scale_offset.pth"
-        self.model.load_state_dict(torch.load(save_path, weights_only=True))
-
-        # defining the parameters for adding noise to the past trajectory
         self.sigma = 0
         self.epsilon = epsilon
         self.sigma_max = sigma_max
 
+        with open("./utils/config.json", "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        self.N_future = data["future-steps"]
+        self.N_past = data["past-steps"]
+
+        # initializing the model
+        save_path = (
+            "./best-weights/best_weight_noise_scale_offset(20-past)(0.1-sigma).pth"
+        )
+        self.model = models.MultiLayer(2 * 20, 100, 100, self.N_future * 2)
+        self.model.load_state_dict(torch.load(save_path, weights_only=True))
+        self.N_past = 20  # adjusting the simulation to run a different model
+
+        self.past_trajectory = np.array(
+            (np.full(self.N_past, x), np.full(self.N_past, y)),
+            dtype=float,  # storing past trajectories
+        )
+
+        self.future_trajectory = np.array(
+            (np.full(self.N_future, x), np.full(self.N_future, y)),
+            dtype=float,  # storing future trajectories
+        )
 
     def draw(self, surface):
-        """Draws the agent on the screen, with a blue circle for the agent, a red line for the agent's past trajectory, 
-        and a green line for the agent's predicted trajectory based on the trained model
-
-        Args:
-            surface (surface): the surface that the components will be drawn on
-        """
-
         # Draws the agent on the screen as a blue circle
         pygame.draw.circle(
             surface,
@@ -193,10 +187,8 @@ class Agent:
         self.past_trajectory[1][-1] = y
 
         # adding noise to the past trajectories
-        # breakpoint()
         N = np.random.randn(2, self.N_past) * self.sigma
         self.past_trajectory = self.past_trajectory + N
-        # breakpoint()
 
         # Passing past trajectories to model to predict future trajectories
         X_ego_past = T(self.past_trajectory, self.pos)
@@ -214,11 +206,9 @@ class Agent:
     # Adding event handlers for arrow keys to ajust noise
     def on_arrow_down(self):
         self.sigma = max(self.sigma - self.epsilon, 0)
-        print("sigma gone down:", self.sigma)
 
     def on_arrow_up(self):
         self.sigma = min(self.sigma_max, self.sigma + self.epsilon)
-        print("sigma gone up:", self.sigma)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -251,10 +241,9 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=2, y=5, N_past=past_steps, N_future=future_steps)
+    agent = Agent(x=2, y=5)
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
-
 
     """ Main Loop """
     running = True

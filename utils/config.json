@@ -1,6 +1,10 @@
-[{"offset": "True",
-"rotate": "False",
-"add_noise": "False",
-"scale": "False"}]
-
+{
+    "future-steps": 10,
+    "past-steps": 20,
+    "offset": true,
+    "rotate": false,
+    "add-noise": true,
+    "scale": false,
+    "num-features": 2
+}
 

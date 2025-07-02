@@ -65,7 +65,7 @@ def T_test(X_past, X_future, offset=True, scale=True):
                 torch.tensor(X_future[:, 1] - X_start[1]),
             ),
             dim=1,
-        )
+    )
 
     if scale:
         X_past = X_past / 2

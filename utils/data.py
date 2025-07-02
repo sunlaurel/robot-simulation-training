@@ -7,13 +7,13 @@ import random
 from sklearn.model_selection import train_test_split
 
 def GenTrainTestDatasets(csv_path, past_steps, future_steps):
-        csv_data = pd.read_csv(csv_path)
-        person_ids = csv_data["id"].unique()
-        train_ids, test_ids = train_test_split(person_ids, test_size=0.2, random_state=2244)
-        train_dataset = TrajectoryDataset(csv_data, train_ids, N_past=past_steps, N_future=future_steps)
-        test_dataset = TrajectoryDataset(csv_data, test_ids, N_past=past_steps, N_future=future_steps)
-        return train_dataset, test_dataset
-    
+    csv_data = pd.read_csv(csv_path)
+    person_ids = csv_data["id"].unique()
+    train_ids, test_ids = train_test_split(person_ids, test_size=0.2, random_state=2244)
+    train_dataset = TrajectoryDataset(csv_data, train_ids, N_past=past_steps, N_future=future_steps)
+    test_dataset = TrajectoryDataset(csv_data, test_ids, N_past=past_steps, N_future=future_steps)
+    return train_dataset, test_dataset
+
 class TrajectoryDataset(Dataset):
 
     def __init__(self, csv_data, split_ids, N_past, N_future):
@@ -85,7 +85,7 @@ def plot_trajectory(x_past, x_future, v_past=None, v_future=None):
     axes[0].set_xlabel("x")
     axes[0].set_ylabel("y")
     axes[0].set_title("Positions")
-    
+
     axes[1].plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="k")
     axes[1].plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="k")
     axes[1].quiver(
@@ -130,3 +130,63 @@ def plot_trajectory(x_past, x_future, v_past=None, v_future=None):
 #     # Plot the trajectory
 #     plot_trajectory(x_past[0], x_future[0], v_past[0], v_future[0])
 #     # break  # Only plot the first batch to avoid unnecessary looping
+
+
+""" For predicted path visualization and graphing it out in case I need it again """
+# dt = 0.12
+# vx_past_coords = v_past[0, :].numpy()
+# vy_past_coords = v_past[1, :].numpy()
+# vx_future_coords = v_future[0, :].numpy()
+# vy_future_coords = v_future[1, :].numpy()
+# vx_predicted_coords = v_predicted[0, :].numpy()
+# vy_predicted_coords = v_predicted[1, :].numpy()
+
+# axes[0].plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="r")
+# axes[0].plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="b")
+# axes[0].plot(
+#     x_predicted_coords, y_predicted_coords, marker="o", linestyle="-", color="g"
+# )
+# axes[0].set_xlabel("x")
+# axes[0].set_ylabel("y")
+# axes[0].set_title("Positions")
+
+# axes[1].plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="k")
+# axes[1].plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="k")
+# axes[1].quiver(
+#     x_past_coords,
+#     y_past_coords,
+#     vx_past_coords,
+#     vy_past_coords,
+#     color="r",
+#     angles="xy",
+#     scale_units="xy",
+#     scale=1 / dt,
+# )
+# axes[1].quiver(
+#     x_future_coords,
+#     y_future_coords,
+#     vx_future_coords,
+#     vy_future_coords,
+#     color="b",
+#     angles="xy",
+#     scale_units="xy",
+#     scale=1 / dt,
+# )
+# axes[1].quiver(
+#     x_predicted_coords,
+#     y_predicted_coords,
+#     vx_predicted_coords,
+#     vy_predicted_coords,
+#     color="g",
+#     angles="xy",
+#     scale_units="xy",
+#     scale=1 / dt,
+# )
+
+# axes[1].set_title("Velocity Vectors")
+# axes[1].set_xlabel("x")
+# axes[1].set_ylabel("y")
+# axes[1].grid(True)
+
+# fig.tight_layout()
+# plt.show()

@@ -1,29 +1,24 @@
 from utils import *
 from train_helper import *
 
-
-# TODO: NEED TO FIGURE OUT HOW TO REMOVE CIRCULAR IMPORTS
-# TODO: ORGANIZE IMPORT ORGANIZATION
-
+# loading in config.json
+with open(file="./utils/config.json", mode="r") as file:
+    data = json.load(file)
 
 # Training parameters
-num_epochs = 1000
+num_epochs = 1200
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
-past_steps = 10
-future_steps = 10
+past_steps = data["past-steps"]
+future_steps = data["future-steps"]
+# num_features = data["num-features"]  # num_features indicates the number of variables (ie: x-pos, y-pos, x-velocity, y-velocity)
 
 # Setting the flags
-offset = True
-rotate = False
-add_noise = True
-scale = True
-
-# Splitting the data 80/20, just cutting at 80% of the data
-training_data, testing_data = GenTrainTestDatasets(
-    "./training-data/crowd_data.csv", past_steps=past_steps, future_steps=future_steps
-)
+offset = data["offset"]
+rotate = data["rotate"]
+add_noise = data["add-noise"]
+scale = data["scale"]
 
 # Set optimizer (adam) and loss function (mse)
 # breakpoint()
@@ -34,8 +29,12 @@ loss_function = nn.L1Loss()
 
 if __name__ == "__main__":
     # Load the data, and split it into batches
-    
-    
+    training_data, testing_data = GenTrainTestDatasets(
+        csv_path="./training-data/crowd_data.csv",
+        past_steps=past_steps,
+        future_steps=future_steps,
+    )
+
     training_generator = torch.utils.data.DataLoader(
         training_data, batch_size=batch_size, shuffle=True
     )
