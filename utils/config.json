@@ -1,8 +1,8 @@
 {
     "future-steps": 10,
-    "past-steps": 20,
+    "past-steps": 15,
     "offset": true,
-    "rotate": false,
+    "rotate": true,
     "add-noise": true,
     "scale": false,
     "num-features": 2

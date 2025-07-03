@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 import random
 import numpy as np
-from baseline_models import stand_model, baseline_model
+from utils import models
 
 
 def T_train(
@@ -137,8 +137,8 @@ def test(
                 input_pos, target_pos, offset=offset, scale=scale
             )
             output = network(input_pos.float())
-            stand_output = stand_model(input_pos.float())
-            baseline_output = baseline_model(input_pos.float())
+            stand_output = models.stand_model(input_pos.float())
+            baseline_output = models.constant_velocity_model(input_pos.float())
             # output = network(
             #     torch.cat((input_pos.float(), input_velocity.float()), dim=1)
             # )
@@ -217,6 +217,8 @@ def trainAndGraph(
     loss_function,
     optimizer,
     num_epochs,
+    future_steps,
+    past_steps,
     logging_interval=1,
     offset=False,
     scale=False,
@@ -252,7 +254,8 @@ def trainAndGraph(
             best_val_loss = avg_loss
             best_epoch = epoch
             best_model_weights = network.state_dict()  # Save weights in memory
-            save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}.pth"
+            save_path = f"./best-weights/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
+
             torch.save(best_model_weights, save_path)  # Load weights on disk
 
         # test_loss = test(

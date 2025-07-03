@@ -1,14 +1,20 @@
-from utils import *
+import utils
 from training import loss_function
-from baseline_models import stand_model, baseline_model
 from train_helper import T_test
 import torch
+import re
 
+save_path = "./best-weights/best_weight_noise_rotate_offset(0.1-sigma).pth"
+match = re.search(r"\((\d+)-past\)", save_path)
 
-save_path = "./best-weights/best_weight_noise_offset(20-past)(0.1-sigma).pth"
+# extracting number of past steps from the file name
+if match:
+    past_steps = int(match.group(1))
+else:
+    past_steps = 10
+
 future_steps = 10
-past_steps = 20
-network = MultiLayer(
+network = utils.models.MultiLayer(
     input_size=2 * past_steps,
     hidden_layer1=100,
     hidden_layer2=100,
@@ -16,7 +22,7 @@ network = MultiLayer(
 )
 network.load_state_dict(torch.load(save_path, weights_only=True))
 
-_, testing_data = GenTrainTestDatasets(
+_, testing_data = utils.data.GenTrainTestDatasets(
     csv_path="./training-data/crowd_data.csv",
     past_steps=past_steps,
     future_steps=future_steps,
@@ -38,8 +44,8 @@ with torch.no_grad():
     # breakpoint()
     for input, expected in test_generator:
         input, expected = T_test(input, offset=True, scale=False, X_future=expected)
-        stand_predicted = stand_model(input.float())
-        baseline_predicted = baseline_model(input.float())
+        stand_predicted = utils.models.stand_model(input.float())
+        baseline_predicted = utils.models.constant_velocity_model(input.float())
 
         predicted_loss += metric_test_loss(input, expected, network, 1)
         stand_loss += loss_function(expected, stand_predicted.float())

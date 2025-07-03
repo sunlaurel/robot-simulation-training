@@ -6,7 +6,7 @@ with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
 
 # Training parameters
-num_epochs = 1200
+num_epochs = 1000
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -58,6 +58,8 @@ if __name__ == "__main__":
         loss_function,
         optimizer,
         num_epochs,
+        future_steps,
+        past_steps,
         print_interval,
         offset=offset,
         add_noise=add_noise,

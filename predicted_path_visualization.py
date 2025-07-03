@@ -1,6 +1,9 @@
-from utils import *
+import utils
+import torch
+from torch.utils.data import DataLoader
+import json
+import matplotlib.pyplot as plt
 from train_helper import T_test
-from baseline_models import baseline_model, stand_model
 
 
 def plot_predicted_trajectory(x_past, x_future, x_predicted):
@@ -14,12 +17,12 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
     y_predicted_coords = x_predicted[1, :].numpy()
 
     # graphing the maintaining velocity model
-    x_baseline = baseline_model(x_past)
+    x_baseline = utils.models.constant_velocity_model(x_past)
     x_baseline_coords = x_baseline[0, :].numpy()
     y_baseline_coords = x_baseline[1, :].numpy()
 
     # graphing the stand still model
-    x_stand = stand_model(x_past)
+    x_stand = utils.models.stand_model(x_past)
     x_stand_coords = x_stand[0, :].numpy()
     y_stand_coords = x_stand[1, :].numpy()
 
@@ -62,17 +65,18 @@ if __name__ == "__main__":
     past_steps = data["past-steps"]
     future_steps = data["future-steps"]
 
-    network = MultiLayer(
+    network = utils.models.MultiLayer(
         input_size=2 * past_steps,
         hidden_layer1=100,
         hidden_layer2=100,
         output_size=2 * future_steps,
     )
-    save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}.pth"
+    # save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}.pth"
+    save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if noise_flag else ''}.pth"
     print("Model visualized:", save_path)
     network.load_state_dict(torch.load(save_path, weights_only=True))
 
-    _, testing_data = GenTrainTestDatasets(
+    _, testing_data = utils.data.GenTrainTestDatasets(
         "./training-data/crowd_data.csv", past_steps, future_steps
     )
 

@@ -29,13 +29,14 @@ class TrajectoryDataset(Dataset):
         # self.velocity_data = {} # mapping from id to trajectory
         for person_id in tqdm(self.person_ids, total = len(self.person_ids), dynamic_ncols=True):
             trajdata = csv_data[csv_data["id"] == person_id].sort_values(by="time")
-            if len(trajdata) < self.N_past + self.N_future:
+            if (
+                len(trajdata) <= self.N_past + self.N_future
+            ):  # look at this again later to see if it should be <= or just <
                 continue
             self.position_data[person_id] = trajdata[["x","y"]].to_numpy().T # 2 x N
             # self.velocity_data[person_id] = trajdata[["v_x","v_y"]].to_numpy().T # 2 x N
 
         self.person_ids = list(self.position_data.keys()) # remove people with short trajectories
-
 
     def __len__(self):
         # The dataset length is the number of rows in the CSV file
@@ -52,7 +53,7 @@ class TrajectoryDataset(Dataset):
         X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future]
         # V_past = V[:, random_frame - self.N_past + 1 : random_frame + 1]
         # V_future = V[:, random_frame + 1 : random_frame + 1 + self.N_future]
-        
+
         return X_past, X_future#, V_past, V_future
 
         # # Convert past and future points to tensors
@@ -60,7 +61,7 @@ class TrajectoryDataset(Dataset):
         # past_y = torch.tensor(past_points.iloc[:, 1].values, dtype=torch.float32)
         # future_x = torch.tensor(future_points.iloc[:, 0].values, dtype=torch.float32)
         # future_y = torch.tensor(future_points.iloc[:, 1].values, dtype=torch.float32)
-        
+
         # # Concatenate past and future to form a trajectory
         # x_trajectory = torch.cat([past_x, future_x])
         # y_trajectory = torch.cat([past_y, future_y])
