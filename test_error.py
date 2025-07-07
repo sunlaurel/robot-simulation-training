@@ -4,7 +4,7 @@ from train_helper import T_test
 import torch
 import re
 
-save_path = "./best-weights/best_weight_noise_rotate_offset(0.1-sigma).pth"
+save_path = "./best-weights/best_weight_noise_rotate_offset(17-past)(0.1-sigma).pth"
 match = re.search(r"\((\d+)-past\)", save_path)
 
 # extracting number of past steps from the file name
