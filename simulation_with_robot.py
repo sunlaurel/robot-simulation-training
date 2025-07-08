@@ -1,6 +1,7 @@
 import pygame
 import sys
 from agent import Agent
+from robot import Robot
 from utils import *
 from simulation_helper import *
 
@@ -17,7 +18,8 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=2, y=5)
+    agent = Agent(x=2, y=5, radius=0.45)
+    robot = Robot(x=2, y=5, theta=3.14 / 2.0, width=0.7, height=0.9)
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
 
@@ -67,6 +69,7 @@ if __name__ == "__main__":
         )
 
         agent.draw(screen)
+        robot.draw(screen)
 
         pygame.display.flip()
         clock.tick(FPS)

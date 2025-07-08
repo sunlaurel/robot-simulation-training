@@ -17,7 +17,7 @@ class Agent:
         self.pos = [x, y]
         self.radius = radius
         self.dragging = False
-        self.offset = [0, 0]
+        self.offset_pos = [0, 0]
         self.sigma = 0
         self.epsilon = epsilon
         self.sigma_max = sigma_max
@@ -176,7 +176,7 @@ class Agent:
             dy = mouse_y - meters_to_pixels(self.pos[1])
             if dx**2 + dy**2 <= meters_to_pixels(self.radius) ** 2:
                 self.dragging = True
-                self.offset = [dx, dy]
+                self.offset_pos = [dx, dy]
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
         elif event.type == pygame.KEYDOWN:
@@ -188,6 +188,6 @@ class Agent:
             if self.dragging:
                 mouse_x, mouse_y = event.pos
                 self.pos = [
-                    pixels_to_meters(mouse_x - self.offset[0]),
-                    pixels_to_meters(mouse_y - self.offset[1]),
+                    pixels_to_meters(mouse_x - self.offset_pos[0]),
+                    pixels_to_meters(mouse_y - self.offset_pos[1]),
                 ]
