@@ -14,7 +14,9 @@ FPS = 30
 """ Initializing the game + setup """
 if __name__ == "__main__":
     pygame.init()
-    screen = pygame.display.set_mode((meters_to_pixels(WIDTH), meters_to_pixels(HEIGHT)))
+    screen = pygame.display.set_mode(
+        (meters_to_pixels(WIDTH), meters_to_pixels(HEIGHT))
+    )
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
@@ -33,12 +35,13 @@ if __name__ == "__main__":
                 running = False
 
             agent.handle_event(event)
-            robot.handle_event(event, sampling_interval_ms)
+            # robot.handle_event(event, sampling_interval_ms)
 
         # sampling positions at 0.12 sec/sample
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= sampling_interval_ms:
             agent.update(agent.pos[0], agent.pos[1])
+            u_next = robot.policy(agent.pos)
             robot.update([np.array([0.0, 0.0]), 0.0], sampling_interval_ms)
             last_sample_time = current_time
 
@@ -72,6 +75,13 @@ if __name__ == "__main__":
 
         agent.draw(screen)
         robot.draw(screen)
+        # drawing the target on the agent for now
+        pygame.draw.circle(
+            screen,
+            (5, 59, 14),
+            (int(meters_to_pixels(agent.pos[0])), int(meters_to_pixels(agent.pos[1]))),
+            meters_to_pixels(0.15),
+        )
 
         pygame.display.flip()
         clock.tick(FPS)

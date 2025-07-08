@@ -23,6 +23,21 @@ class Robot:
         # self.dragging = False
         # self.offset = [0, 0]
 
+    def policy(self, target_pos):
+        v = np.array([0.0, 0.0])
+        w = 0.0
+        # breakpoint()
+
+        if self.pos[0] != target_pos[0] or self.pos[1] != target_pos[1]:
+            if math.atan(target_pos[1] / target_pos[0]) != self.theta:
+                w = 0.3 if self.theta - math.atan(target_pos[1] / target_pos[0]) < 0 else -0.3
+            if self.pos[0] != target_pos[0]:
+                v[0] = 0.2 if self.pos[0] - target_pos[0] else -0.2
+            if self.pos[1] != target_pos[1]:
+                v[1] = 0.2 if self.pos[1] - target_pos[1] else -0.2
+
+        return [v, w]
+
     def update(self, u, dt):
         v, w = u
         self.v += v
