@@ -15,11 +15,40 @@ class Robot:
         height=0.9,
     ):
         self.pos = [x, y]
-        self.theta = theta  # angle that the robot's facing
+        self.theta = theta              # angle that the robot's facing
         self.width = width
         self.height = height
+        self.v = np.array([0.0, 0.0])   # initial linear velocity
+        self.w = 0                      # initial angular velocity
         # self.dragging = False
         # self.offset = [0, 0]
+
+    def update(self, u, dt):
+        v, w = u
+        self.v += v
+        self.w += w
+        # breakpoint()
+        self.pos = self.pos + self.v * dt
+        self.theta = self.theta + self.w * dt
+
+    # Adding event handlers for arrow keys to adjust robot's velocity and position
+    def handle_event(self, event, dt):
+        # TODO: later, update this to change framerate in main loop
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_d:
+                self.update([np.array([0.2, 0.0]), 0.0], dt)
+            elif event.key == pygame.K_a:
+                self.update([np.array([-0.2, 0.0]), 0.0], dt)
+            elif event.key == pygame.K_s:
+                self.update([np.array([0.0, 0.2]), 0.0], dt)
+            elif event.key == pygame.K_w:
+                self.update([np.array([0.0, -0.2]), 0.0], dt)
+            elif event.key == pygame.K_e:
+                self.update([np.array([0.0, 0]), 0.3], dt)
+            elif event.key == pygame.K_q:
+                self.update([np.array([0.0, 0.0]), -0.3], dt)
+        elif event.type == pygame.KEYUP:
+            self.update([-self.v, -self.w], dt)
 
     def draw(self, surface):
         dx = self.width / 2
@@ -50,36 +79,3 @@ class Robot:
             (128, 128, 128),
             rotated,
         )
-
-    def update(self, x, y):
-        pass
-
-    # Adding event handlers for arrow keys to ajust noise
-    def on_arrow_down(self):
-        self.sigma = max(self.sigma - self.epsilon, 0)
-
-    def on_arrow_up(self):
-        self.sigma = min(self.sigma_max, self.sigma + self.epsilon)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = event.pos
-            dx = mouse_x - meters_to_pixels(self.pos[0])
-            dy = mouse_y - meters_to_pixels(self.pos[1])
-            if dx**2 + dy**2 <= meters_to_pixels(self.radius) ** 2:
-                self.dragging = True
-                self.offset = [dx, dy]
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.on_arrow_up()
-            elif event.key == pygame.K_DOWN:
-                self.on_arrow_down()
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                mouse_x, mouse_y = event.pos
-                self.pos = [
-                    pixels_to_meters(mouse_x - self.offset[0]),
-                    pixels_to_meters(mouse_y - self.offset[1]),
-                ]
