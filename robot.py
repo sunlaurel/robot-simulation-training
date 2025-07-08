@@ -11,44 +11,57 @@ class Robot:
         x=2,
         y=5,
         theta=0,
-        width=0.7,
-        height=0.9,
+        width=0.9,
+        height=0.7,
     ):
         self.pos = [x, y]
-        self.theta = theta              # angle that the robot's facing
+        self.theta = theta  # angle that the robot's facing
         self.width = width
         self.height = height
-        self.v = np.array([0.0, 0.0])   # initial linear velocity
-        self.w = 0                      # initial angular velocity
-        # self.dragging = False
-        # self.offset = [0, 0]
+        self.v = np.array([0.1, 0.1])  # initial linear velocity
+        self.w = 0.052  # initial angular velocity
+
+    def angle_difference(self, target_angle):
+        # forcing the angle to be between -pi to pi
+        return (target_angle - self.theta + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target_pos):
         v = np.array([0.0, 0.0])
         w = 0.0
         # breakpoint()
 
-        if self.pos[0] != target_pos[0] or self.pos[1] != target_pos[1]:
-            if math.atan(target_pos[1] / target_pos[0]) != self.theta:
-                w = 0.3 if self.theta - math.atan(target_pos[1] / target_pos[0]) < 0 else -0.3
-            if self.pos[0] != target_pos[0]:
-                v[0] = 0.2 if self.pos[0] - target_pos[0] else -0.2
-            if self.pos[1] != target_pos[1]:
-                v[1] = 0.2 if self.pos[1] - target_pos[1] else -0.2
+        direction = np.array(target_pos) - self.pos
+
+        if direction[0] ** 2 + direction[1] ** 2 > 0.01:
+            target_angle = math.atan2(
+                -direction[1], direction[0]
+            )  # y is flipped for screen coordinates
+            diff = self.angle_difference(target_angle)
+
+            # rotating towards the target
+            if abs(diff) > self.w:
+                w = self.w if diff > 0 else -self.w
+            else:
+                self.theta = target_angle  # snap to the right angle if close enough
+
+            # moving toward target if facing close to target
+            if abs(diff) < 0.349:
+                v = self.v * np.array([math.cos(self.theta), -math.sin(self.theta)])
 
         return [v, w]
 
     def update(self, u, dt):
+        # breakpoint()
         v, w = u
         self.v += v
         self.w += w
-        # breakpoint()
         self.pos = self.pos + self.v * dt
         self.theta = self.theta + self.w * dt
+        self.theta %= 2 * math.pi  # normalizing angle to 0 to 2 pi
 
     # Adding event handlers for arrow keys to adjust robot's velocity and position
     def handle_event(self, event, dt):
-        # TODO: later, update this to change framerate in main loop
+        # TODO: later, update this to change frame rate in main loop
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_d:
                 self.update([np.array([0.2, 0.0]), 0.0], dt)
