@@ -80,8 +80,8 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=1, y=1, radius=0.5)
-    robot = Robot(x=2, y=5, theta=0, width=0.9, height=0.7)
+    agent = Agent(x=2, y=5, radius=0.5)
+    robot = Robot(x=2, y=10, theta=0, width=0.9, height=0.7)
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 running = False
 
             agent.handle_event(event)
-            robot.handle_event(event, sampling_interval_ms)
+            # robot.handle_event(event, sampling_interval_ms)
 
         # sampling positions at 0.12 sec/sample
         current_time = pygame.time.get_ticks()
