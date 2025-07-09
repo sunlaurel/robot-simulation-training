@@ -14,14 +14,19 @@ class Robot:
         self,
         x=2,
         y=5,
+        target_x=2,
+        target_y=5,
         theta=0,            # default, the robot is facing right
         width=0.9,
         height=0.6,
+        dt=0.833/1000
     ):
         self.pos = [x, y]
+        self.target_pos = [target_x, target_y]
         self.theta = theta  # angle that the robot's facing
         self.width = width
         self.height = height
+        self.dt = dt
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
 
@@ -30,11 +35,20 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target_pos):
+    def policy(self, target):
         v = np.array([0.0, 0.0])
         w = 0.0
+        target_pos = target[:, -1]
+
+        # calculating the target position based on the future trajectory
+        target_v = (target[:, -1] - target[:, 0]) / self.dt
+        if np.linalg.norm(target_v) > 1:   
+            # if the target speed is greater than 1 m/s, then offset is 0.75 m
+            angle = math.atan(target_v[1] / target_v[0])   # getting the angle of the 
+            pass
 
         direction = np.array(target_pos) - self.pos
+
 
         if np.linalg.norm(direction) > STOP_DISTANCE:
             target_angle = math.atan2(
@@ -48,7 +62,7 @@ class Robot:
             if abs(diff) > MAX_W:
                 w = MAX_W if diff > 0 else -MAX_W
             else:
-                self.theta = target_angle  # snap to the right angle if close enough
+                w = diff  # snap to the right angle if close enough
 
             # moving toward target if facing close to target
             if abs(diff) < THETA_TOLERANCE:
@@ -56,33 +70,37 @@ class Robot:
 
         return [v, w]
 
-    def update(self, u, dt):
+    def update(self, u):
         v, w = u
         # debugging purposes
         self.v = v
         self.w = w
-        self.pos += v * dt
-        self.theta += w * dt
-        self.theta %= 2 * math.pi  # normalizing angle to 0 to 2 pi
+        self.pos += v * self.dt
+        self.theta += w * self.dt
+        if self.theta > 2 * math.pi:
+            self.theta = self.theta - 2 * math.pi
+        elif self.theta < 0:
+            self.theta = self.theta + 2 * math.pi
+        # self.theta %= 2 * math.pi  # normalizing angle to 0 to 2 pi
 
     # Adding event handlers for arrow keys to adjust robot's velocity and position
-    def handle_event(self, event, dt):
+    def handle_event(self, event):
         # TODO: later, update this to change frame rate in main loop
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_d:
-                self.update([np.array([0.2, 0.0]), 0.0], dt)
+                self.update([np.array([0.2, 0.0]), 0.0], self.dt)
             elif event.key == pygame.K_a:
-                self.update([np.array([-0.2, 0.0]), 0.0], dt)
+                self.update([np.array([-0.2, 0.0]), 0.0], self.dt)
             elif event.key == pygame.K_s:
-                self.update([np.array([0.0, 0.2]), 0.0], dt)
+                self.update([np.array([0.0, 0.2]), 0.0], self.dt)
             elif event.key == pygame.K_w:
-                self.update([np.array([0.0, -0.2]), 0.0], dt)
+                self.update([np.array([0.0, -0.2]), 0.0], self.dt)
             elif event.key == pygame.K_e:
-                self.update([np.array([0.0, 0]), 0.3], dt)
+                self.update([np.array([0.0, 0]), 0.3], self.dt)
             elif event.key == pygame.K_q:
-                self.update([np.array([0.0, 0.0]), -0.3], dt)
+                self.update([np.array([0.0, 0.0]), -0.3], self.dt)
         elif event.type == pygame.KEYUP:
-            self.update([np.array([0.0, 0.0]), 0.0], dt)
+            self.update([np.array([0.0, 0.0]), 0.0], self.dt)
 
     def draw(self, surface):
         dx = self.width / 2
@@ -112,4 +130,13 @@ class Robot:
             surface,
             (128, 128, 128),
             rotated,
+        )
+
+        # Draws the robot's target on the screen as a dark green circle
+        # drawing the target on the agent for now
+        pygame.draw.circle(
+            surface,
+            (5, 59, 14),
+            (int(meters_to_pixels(self.target_pos[0])), int(meters_to_pixels(self.target_pos[1]))),
+            meters_to_pixels(0.15),
         )

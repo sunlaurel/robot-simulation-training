@@ -80,10 +80,19 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=2, y=5, radius=0.5)
-    robot = Robot(x=2, y=10, theta=0, width=0.9, height=0.7)
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
+    agent = Agent(x=2, y=5, radius=0.5)
+    robot = Robot(
+        x=2,
+        y=10,
+        target_x=agent.pos[0],
+        target_y=agent.pos[1],
+        theta=0,
+        width=0.9,
+        height=0.7,
+        dt=sampling_interval_ms,
+    )
 
     """ Main Loop """
     running = True
@@ -95,27 +104,21 @@ if __name__ == "__main__":
                 running = False
 
             agent.handle_event(event)
-            # robot.handle_event(event, sampling_interval_ms)
+            # robot.handle_event(event)
 
         # sampling positions at 0.12 sec/sample
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= sampling_interval_ms:
             agent.update(agent.pos[0], agent.pos[1])
-            u_next = robot.policy(agent.pos)
-            robot.update(u_next, sampling_interval_ms)
+            u_next = robot.policy(
+                agent.future_trajectory[:, -2:]
+            )  # passing in the last two positions of predicted trajectory
+            robot.update(u_next)
             last_sample_time = current_time
 
         display_text(agent)
         agent.draw(screen)
         robot.draw(screen)
-
-        # drawing the target on the agent for now
-        pygame.draw.circle(
-            screen,
-            (5, 59, 14),
-            (int(meters_to_pixels(agent.pos[0])), int(meters_to_pixels(agent.pos[1]))),
-            meters_to_pixels(0.15),
-        )
 
         pygame.display.flip()
         clock.tick(FPS)
