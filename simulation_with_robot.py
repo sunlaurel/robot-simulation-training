@@ -1,7 +1,8 @@
 import pygame
 import sys
+import math
 from agent import Agent
-from robot import Robot, STOP_RADIUS
+from robot import Robot, STAND_RADIUS
 from utils import *
 from simulation_helper import *
 
@@ -94,7 +95,7 @@ if __name__ == "__main__":
         y=7,
         target_x=agent.pos[0],
         target_y=agent.pos[1],
-        theta=0,
+        theta=-math.pi/2,
         width=0.9,
         height=0.7,
         dt=sampling_interval_ms,
@@ -128,7 +129,7 @@ if __name__ == "__main__":
         draw_transparent_circle(
             screen,
             np.vectorize(meters_to_pixels)(agent.pos),
-            int(meters_to_pixels(STOP_RADIUS)),
+            int(meters_to_pixels(STAND_RADIUS)),
         )
         agent.draw(screen)
         robot.draw(screen)

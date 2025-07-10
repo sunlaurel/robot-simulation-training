@@ -4,7 +4,7 @@ from utils import *
 from simulation_helper import *
 
 MAX_W = 10  # max angular speed (rad/s)
-MAX_V = 7  # max linear speed (m/s)
+MAX_V = 10  # max linear speed (m/s)
 STOP_DISTANCE = 0.05  # threshold distance to stop near target
 STOP_AND_TURN_RADIUS = 2  # threshold distance for robot to stop and turn to the target
 SLOW_AND_TURN_RADIUS = 5  # threshold distance for robot to slow down enough to turn
@@ -12,9 +12,8 @@ STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
 WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
 THETA_TOLERANCE = 0.5  # threshold angle range in radians
 
-class Robot:
 
-    prev_angle = 0
+class Robot:
 
     def __init__(
         self,
@@ -22,10 +21,10 @@ class Robot:
         y=5,
         target_x=2,
         target_y=5,
-        theta=0,            # default, the robot is facing right
+        theta=0,  # default, the robot is facing right
         width=0.9,
         height=0.6,
-        dt=0.833/1000
+        dt=0.833 / 1000,
     ):
         self.pos = [x, y]
         self.target_pos = [target_x, target_y]
@@ -35,7 +34,6 @@ class Robot:
         self.dt = dt
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
-        prev_angle = theta
 
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
@@ -43,22 +41,27 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
+        # TODO: have the robot avoid the person as much as possible
+        # TODO: an issue is that the robot needs to slow down when out of range to follow the person again
+        # TODO: fix the offset target position to be on person's right
+        # TODO: fix the robot to turn where the person is oriented
+        # TODO: fix on #84 so that it would more smoothly track the person's position when it's close to it
         w = 0.0
+        breakpoint()
         self.target_pos = target[:, -1]
 
         # calculating the target position based on the future trajectory
         target_v = (target[:, -1] - target[:, 0]) / self.dt
+        print("target v:", target_v)
         target_speed = np.linalg.norm(target_v)
 
         # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
-        if target_speed > 1e-3:
-            offset = (
-                (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
-                * np.array([-target_v[1], target_v[0]])
-                / target_speed
-            )
-        else:
-            pass 
+        offset = (
+            (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
+            * np.array([-target_v[1], target_v[0]])
+            / target_speed
+        )
+        print("offset:", offset)
         self.target_pos += offset
 
         # calculating the angles and where the robot should move
@@ -76,7 +79,9 @@ class Robot:
         if distance < STOP_AND_TURN_RADIUS:
             # breakpoint()
             if distance < STOP_DISTANCE or abs(diff) > THETA_TOLERANCE:
-                v = np.array([0.0, 0.0])
+                v = np.array(
+                    [0.0, 0.0]
+                )
         elif (
             distance < SLOW_AND_TURN_RADIUS
         ):  # slows down the robot enough to be able to turn
@@ -124,9 +129,9 @@ class Robot:
         corners = np.array(
             [
                 (-dx, -dy),  # top left
-                (dx, -dy),   # top right
-                (dx, dy),    # bottom right
-                (-dx, dy),   # bottom left
+                (dx, -dy),  # top right
+                (dx, dy),  # bottom right
+                (-dx, dy),  # bottom left
             ]
         )
 
@@ -153,6 +158,9 @@ class Robot:
         pygame.draw.circle(
             surface,
             (5, 59, 14),
-            (int(meters_to_pixels(self.target_pos[0])), int(meters_to_pixels(self.target_pos[1]))),
+            (
+                int(meters_to_pixels(self.target_pos[0])),
+                int(meters_to_pixels(self.target_pos[1])),
+            ),
             meters_to_pixels(0.15),
         )
