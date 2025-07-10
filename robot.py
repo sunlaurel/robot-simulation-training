@@ -3,15 +3,18 @@ import math
 from utils import *
 from simulation_helper import *
 
-MAX_W = 1  # max angular speed (rad/s)
-MAX_V = 1.5  # max linear speed (m/s)
+MAX_W = 10  # max angular speed (rad/s)
+MAX_V = 7  # max linear speed (m/s)
 STOP_DISTANCE = 0.05  # threshold distance to stop near target
-STOP_AND_TURN_DISTANCE = (
-    2  # threshold distance for robot to stop and turn to the target
-)
-THETA_TOLERANCE = 0.349  # threshold angle range in radians
+STOP_AND_TURN_RADIUS = 2  # threshold distance for robot to stop and turn to the target
+SLOW_AND_TURN_RADIUS = 5  # threshold distance for robot to slow down enough to turn
+STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
+WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
+THETA_TOLERANCE = 0.5  # threshold angle range in radians
 
 class Robot:
+
+    prev_angle = 0
 
     def __init__(
         self,
@@ -32,6 +35,7 @@ class Robot:
         self.dt = dt
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
+        prev_angle = theta
 
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
@@ -39,8 +43,6 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
-        # robot is constantly trying to get closer to the target
-        v = MAX_V * np.array([math.cos(self.theta), math.sin(self.theta)])
         w = 0.0
         self.target_pos = target[:, -1]
 
@@ -49,12 +51,14 @@ class Robot:
         target_speed = np.linalg.norm(target_v)
 
         # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
-        offset = (
-            (1.5 if target_speed > 1 else 1)
-            * np.array([-target_v[1], target_v[0]])
-            / target_speed
-        )
-        print("offset:", offset)
+        if target_speed > 1e-3:
+            offset = (
+                (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
+                * np.array([-target_v[1], target_v[0]])
+                / target_speed
+            )
+        else:
+            pass 
         self.target_pos += offset
 
         # calculating the angles and where the robot should move
@@ -66,13 +70,17 @@ class Robot:
 
         diff = self.angle_difference(target_angle)
 
+        v = MAX_V * np.array([math.cos(self.theta + w), math.sin(self.theta + w)])
+
         # checking if the distance is within the stopping distance of the target position
-        # print("distance:", distance)
-        if distance < STOP_AND_TURN_DISTANCE:
+        if distance < STOP_AND_TURN_RADIUS:
             # breakpoint()
             if distance < STOP_DISTANCE or abs(diff) > THETA_TOLERANCE:
                 v = np.array([0.0, 0.0])
-            w = MAX_W if diff > 0 else -MAX_W
+        elif (
+            distance < SLOW_AND_TURN_RADIUS
+        ):  # slows down the robot enough to be able to turn
+            v *= 0.5
 
         if abs(diff) > MAX_W:
             w = MAX_W if diff > 0 else -MAX_W
@@ -83,33 +91,32 @@ class Robot:
 
     def update(self, u):
         v, w = u
-        # debugging purposes
-        self.v = v
-        self.w = w
-        self.pos += v * self.dt
+        self.v = v  # debugging purposes
+        self.w = w  # debugging purposes
         self.theta += w * self.dt
         if self.theta > 2 * math.pi:
             self.theta = self.theta - 2 * math.pi
         elif self.theta < 0:
             self.theta = self.theta + 2 * math.pi
+        self.pos += v * self.dt
 
     # Adding event handlers for arrow keys to adjust robot's velocity and position
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_d:
-                self.update([np.array([0.2, 0.0]), 0.0], self.dt)
+                self.update([np.array([0.2, 0.0]), 0.0])
             elif event.key == pygame.K_a:
-                self.update([np.array([-0.2, 0.0]), 0.0], self.dt)
+                self.update([np.array([-0.2, 0.0]), 0.0])
             elif event.key == pygame.K_s:
-                self.update([np.array([0.0, 0.2]), 0.0], self.dt)
+                self.update([np.array([0.0, 0.2]), 0.0])
             elif event.key == pygame.K_w:
-                self.update([np.array([0.0, -0.2]), 0.0], self.dt)
+                self.update([np.array([0.0, -0.2]), 0.0])
             elif event.key == pygame.K_e:
-                self.update([np.array([0.0, 0]), 0.3], self.dt)
+                self.update([np.array([0.0, 0]), 0.3])
             elif event.key == pygame.K_q:
-                self.update([np.array([0.0, 0.0]), -0.3], self.dt)
+                self.update([np.array([0.0, 0.0]), -0.3])
         elif event.type == pygame.KEYUP:
-            self.update([np.array([0.0, 0.0]), 0.0], self.dt)
+            self.update([np.array([0.0, 0.0]), 0.0])
 
     def draw(self, surface):
         dx = self.width / 2

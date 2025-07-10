@@ -1,19 +1,17 @@
 import pygame
 import sys
 from agent import Agent
-from robot import Robot
+from robot import Robot, STOP_RADIUS
 from utils import *
 from simulation_helper import *
 
 """ Constants """
-WIDTH, HEIGHT = 10, 10
+WIDTH, HEIGHT = 10, 9
 BG_COLOR = (255, 255, 255)
 FPS = 30
 
 
-""" Displaying text on screen """
-
-
+# Displaying text on screen
 def display_text(agent):
     # calculating the speed of the agent
     speeds = (
@@ -71,6 +69,14 @@ def display_text(agent):
     )
 
 
+# Drawing a circle radius around the agent when standing still
+def draw_transparent_circle(surface, center, radius):
+    target_rect = pygame.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
+    shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+    pygame.draw.circle(shape_surf, (255, 0, 0, 100), (radius, radius), radius)
+    surface.blit(shape_surf, target_rect)
+
+
 """ Initializing the game + setup """
 if __name__ == "__main__":
     pygame.init()
@@ -110,15 +116,23 @@ if __name__ == "__main__":
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= sampling_interval_ms:
             agent.update(agent.pos[0], agent.pos[1])
+            # breakpoint()
             u_next = robot.policy(
                 agent.future_trajectory[:, -2:]
+                # agent.past_trajectory[:, -2:]
             )  # passing in the last two positions of predicted trajectory
             robot.update(u_next)
             last_sample_time = current_time
 
-        display_text(agent)
+        # Draws a circle the radius of what the distance is when the agent is standing still
+        draw_transparent_circle(
+            screen,
+            np.vectorize(meters_to_pixels)(agent.pos),
+            int(meters_to_pixels(STOP_RADIUS)),
+        )
         agent.draw(screen)
         robot.draw(screen)
+        display_text(agent)
 
         pygame.display.flip()
         clock.tick(FPS)
