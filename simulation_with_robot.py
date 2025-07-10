@@ -85,7 +85,7 @@ if __name__ == "__main__":
     agent = Agent(x=2, y=5, radius=0.5)
     robot = Robot(
         x=2,
-        y=10,
+        y=7,
         target_x=agent.pos[0],
         target_y=agent.pos[1],
         theta=0,

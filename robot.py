@@ -3,8 +3,8 @@ import math
 from utils import *
 from simulation_helper import *
 
-MAX_W = 0.5               # max angular speed (rad/s)
-MAX_V = 2               # max linear speed (m/s)
+MAX_W = 1  # max angular speed (rad/s)
+MAX_V = 1.5  # max linear speed (m/s)
 STOP_DISTANCE = 0.1       # threshold distance to stop near target
 THETA_TOLERANCE = 0.349   # threshold angle range in radians
 
@@ -36,37 +36,50 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
-        v = np.array([0.0, 0.0])
+        # robot is constantly trying to get closer to the target
+        v = MAX_V * np.array([math.cos(self.theta), math.sin(self.theta)])
         w = 0.0
-        target_pos = target[:, -1]
+        self.target_pos = target[:, -1]
 
         # calculating the target position based on the future trajectory
         target_v = (target[:, -1] - target[:, 0]) / self.dt
-        if np.linalg.norm(target_v) > 1:   
-            # if the target speed is greater than 1 m/s, then offset is 0.75 m
-            angle = math.atan(target_v[1] / target_v[0])   # getting the angle of the 
-            pass
+        target_speed = np.linalg.norm(target_v)
 
-        direction = np.array(target_pos) - self.pos
+        # calculating the angles and where the robot should move
+        direction = np.array(self.target_pos) - self.pos
+        target_angle = math.atan2(
+            direction[1], direction[0]
+        )  # y is flipped for screen coordinates
 
+        diff = self.angle_difference(target_angle)
 
+        # breakpoint()
+
+        # adjusting robot's target position based on walking speed
+        if target_speed > 1:
+            # if target's speed is greater than 1 m/s, then offset is 1.25 m to the right
+            offset = 1.25 / target_speed * np.array([-target_v[1], target_v[0]])
+            self.target_pos += offset
+        else:  # if target's speed is less than 1 m/s (essentially standing still), then offset is 1 m to the right
+            offset = 1 / target_speed * np.array([-target_v[1], target_v[0]])
+            self.target_pos += offset
+
+        # checking if the distance is within the stopping distance of the target position
         if np.linalg.norm(direction) > STOP_DISTANCE:
-            target_angle = math.atan2(
-                direction[1], direction[0]
-            )  # y is flipped for screen coordinates
-
-
-            diff = self.angle_difference(target_angle)
-
             # rotating towards the target
             if abs(diff) > MAX_W:
                 w = MAX_W if diff > 0 else -MAX_W
             else:
-                w = diff  # snap to the right angle if close enough
+                w = diff
 
-            # moving toward target if facing close to target
-            if abs(diff) < THETA_TOLERANCE:
-                v = MAX_V * np.array([math.cos(self.theta), math.sin(self.theta)])
+            # # moving toward target if facing close to target
+            # if abs(diff) < THETA_TOLERANCE:
+            #     v = MAX_V * np.array([math.cos(self.theta), math.sin(self.theta)])
+        else:  # if the robot gets to the target position, reorient to face the same way as the person
+            print("reached the target position")
+            breakpoint()
+            v = np.array([0.0, 0.0])
+            w = MAX_W if diff > 0 else -MAX_W
 
         return [v, w]
 
