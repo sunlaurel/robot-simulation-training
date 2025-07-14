@@ -8,8 +8,6 @@ MAX_V = 1.5  # max linear speed (m/s)
 STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
 WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
 
-# stand_direction = 0
-
 
 class Robot:
 
@@ -33,17 +31,12 @@ class Robot:
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
 
-        # global stand_direction
-        # stand_direction = theta
-
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
-        # breakpoint()
-        # global stand_direction
         self.target_pos = target[:, -1]
 
         # calculating the target position based on the future trajectory
@@ -58,24 +51,20 @@ class Robot:
                 / target_speed
             )
         else:
-            # offset = STAND_RADIUS * np.array(
-            #     [math.cos(stand_direction), math.sin(stand_direction)]
-            # )
-            offset = STAND_RADIUS * np.array(
-                [-self.target_pos[1], self.target_pos[0]]
-            ) / np.linalg.norm(self.target_pos)
+            offset = (
+                STAND_RADIUS
+                * np.array([-self.target_pos[1], self.target_pos[0]])
+                / np.linalg.norm(self.target_pos)
+            )
+
         self.target_pos += offset
 
         # calculating the angles and where the robot should move
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
-        # if target_speed > 1e-01:  # if the robot is still moving, save last position
         target_angle = math.atan2(
             direction[1], direction[0]
         )  # angle is + for cw and - for ccw
-            # stand_direction = target_angle
-        # else:
-            # target_angle = stand_direction
 
         angle_diff = self.angle_difference(target_angle)
 
@@ -91,6 +80,10 @@ class Robot:
             v = distance * np.array(
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
             )
+
+            if np.linalg.norm(v) < 1e-01:
+                v = np.array([0.0, 0.0])
+                w = 0.0
         else:
             v = MAX_V * np.array(
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
