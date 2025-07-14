@@ -4,13 +4,9 @@ from utils import *
 from simulation_helper import *
 
 MAX_W = 10  # max angular speed (rad/s)
-MAX_V = 10  # max linear speed (m/s)
-STOP_DISTANCE = 0.05  # threshold distance to stop near target
-STOP_AND_TURN_RADIUS = 2  # threshold distance for robot to stop and turn to the target
-SLOW_AND_TURN_RADIUS = 5  # threshold distance for robot to slow down enough to turn
+MAX_V = 15  # max linear speed (m/s)
 STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
 WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
-THETA_TOLERANCE = 0.5  # threshold angle range in radians
 
 
 class Robot:
@@ -22,8 +18,8 @@ class Robot:
         target_x=2,
         target_y=5,
         theta=0,  # default, the robot is facing right
-        width=0.9,
-        height=0.6,
+        width=0.6,
+        height=0.9,
         dt=0.833 / 1000,
     ):
         self.pos = [x, y]
@@ -41,18 +37,14 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
-        # TODO: have the robot avoid the person as much as possible
-        # TODO: an issue is that the robot needs to slow down when out of range to follow the person again
         # TODO: fix the offset target position to be on person's right
         # TODO: fix the robot to turn where the person is oriented
-        # TODO: fix on #84 so that it would more smoothly track the person's position when it's close to it
-        w = 0.0
-        breakpoint()
+        # TODO: ask Zach about median speed compared to the speed of the robot
+        # breakpoint()
         self.target_pos = target[:, -1]
 
         # calculating the target position based on the future trajectory
         target_v = (target[:, -1] - target[:, 0]) / self.dt
-        print("target v:", target_v)
         target_speed = np.linalg.norm(target_v)
 
         # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
@@ -61,7 +53,6 @@ class Robot:
             * np.array([-target_v[1], target_v[0]])
             / target_speed
         )
-        print("offset:", offset)
         self.target_pos += offset
 
         # calculating the angles and where the robot should move
@@ -69,28 +60,30 @@ class Robot:
         distance = np.linalg.norm(direction)
         target_angle = math.atan2(
             direction[1], direction[0]
-        )  # y is flipped for screen coordinates
+        )  # angle is + for cw and - for ccw
 
-        diff = self.angle_difference(target_angle)
+        angle_diff = self.angle_difference(target_angle)
+        print("target angle:", target_angle)
+        print("angle_diff", angle_diff)
 
-        v = MAX_V * np.array([math.cos(self.theta + w), math.sin(self.theta + w)])
-
-        # checking if the distance is within the stopping distance of the target position
-        if distance < STOP_AND_TURN_RADIUS:
-            # breakpoint()
-            if distance < STOP_DISTANCE or abs(diff) > THETA_TOLERANCE:
-                v = np.array(
-                    [0.0, 0.0]
-                )
-        elif (
-            distance < SLOW_AND_TURN_RADIUS
-        ):  # slows down the robot enough to be able to turn
-            v *= 0.5
-
-        if abs(diff) > MAX_W:
-            w = MAX_W if diff > 0 else -MAX_W
+        # calculating the angular velocity
+        if abs(angle_diff) > MAX_W:
+            w = MAX_W if angle_diff > 0 else -MAX_W
         else:
-            w = diff
+            w = angle_diff
+
+        # calculating the linear velocity
+        if distance < MAX_V:
+            # if within the stopping range, then moves incrementally closer to the target
+            v = distance * np.array(
+                # [math.cos(self.theta + w), math.sin(self.theta + w)]
+                # [math.cos(self.theta + w), math.sin(self.theta + w)]
+                [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
+            )
+        else:
+            v = MAX_V * np.array(
+                [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
+            )  # ranges the max velocity depending on proportion of distance to entire screen
 
         return [v, w]
 
@@ -124,12 +117,17 @@ class Robot:
             self.update([np.array([0.0, 0.0]), 0.0])
 
     def draw(self, surface):
-        dx = self.width / 2
-        dy = self.height / 2
+        # Draws the robot on the screen as a gray rectangle
+        dx = self.height / 2
+        dy = self.width / 2
+        nose_dx = self.width * 0.3 / 2
+        nose_dy = self.height * 0.5 / 2
         corners = np.array(
             [
                 (-dx, -dy),  # top left
                 (dx, -dy),  # top right
+                (dx + nose_dx, -nose_dy),  # top left of nose
+                (dx + nose_dx, nose_dy),  # top right of nose
                 (dx, dy),  # bottom right
                 (-dx, dy),  # bottom left
             ]
@@ -146,7 +144,6 @@ class Robot:
                 )
             )
 
-        # Draws the robot on the screen as a gray rectangle
         pygame.draw.polygon(
             surface,
             (128, 128, 128),
