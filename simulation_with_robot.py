@@ -10,7 +10,8 @@ from simulation_helper import *
 WIDTH, HEIGHT = 17, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
-
+# SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
+SAMPLING_INTERVAL_MS = 0.12
 
 # Displaying text on screen
 def display_text(agent):
@@ -18,13 +19,13 @@ def display_text(agent):
     speeds = np.linalg.norm(
         agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:],
         axis=0,
-    )
+    ) / SAMPLING_INTERVAL_MS
 
     # rendering the speed and position on screen
-    median_speed = np.median(speeds / 0.12)
+    median_speed = np.median(speeds)
     speed_text = f"Median speed(m/s): {median_speed:.5f}"
     pos_text = f"Position(m): ({agent.pos[0]:.2f}, {agent.pos[1]:.2f})"
-    robot_speed_text = f"Robot speed(m/s): {np.linalg.norm(robot.v):.2f}"
+    robot_speed_text = f"Robot speed(m/s): {np.linalg.norm(robot.v):.5f}"
     robot_v_text = f"Robot linear vel(m/s): ({robot.v[0]:.3f}, {robot.v[1]:.3f})"
     robot_w_text = f"Robot angular vel(rad/s): {robot.w:.3f}"
     robot_pos_text = f"Robot pos(m): ({robot.pos[0]:.2f}, {robot.pos[1]:.2f})"
@@ -90,7 +91,6 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
     agent = Agent(x=2, y=5, radius=0.5)
     robot = Robot(
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         theta=-math.pi / 2,
         width=0.7,
         height=0.9,
-        dt=sampling_interval_ms,
+        dt=SAMPLING_INTERVAL_MS,
     )
 
     """ Main Loop """
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
         # sampling positions at 0.12 sec/sample
         current_time = pygame.time.get_ticks()
-        if current_time - last_sample_time >= sampling_interval_ms:
+        if current_time - last_sample_time >= SAMPLING_INTERVAL_MS:
             agent.update(agent.pos[0], agent.pos[1])
             u_next = robot.policy(
                 agent.future_trajectory[:, -2:]

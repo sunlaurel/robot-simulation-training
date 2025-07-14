@@ -4,9 +4,11 @@ from utils import *
 from simulation_helper import *
 
 MAX_W = 10  # max angular speed (rad/s)
-MAX_V = 15  # max linear speed (m/s)
+MAX_V = 1.5  # max linear speed (m/s)
 STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
 WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
+
+# stand_direction = 0
 
 
 class Robot:
@@ -20,7 +22,7 @@ class Robot:
         theta=0,  # default, the robot is facing right
         width=0.6,
         height=0.9,
-        dt=0.833 / 1000,
+        dt=8.33 / 1000,
     ):
         self.pos = [x, y]
         self.target_pos = [target_x, target_y]
@@ -31,16 +33,17 @@ class Robot:
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
 
+        # global stand_direction
+        # stand_direction = theta
+
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, target):
-        # TODO: fix the offset target position to be on person's right
-        # TODO: fix the robot to turn where the person is oriented
-        # TODO: ask Zach about median speed compared to the speed of the robot
         # breakpoint()
+        # global stand_direction
         self.target_pos = target[:, -1]
 
         # calculating the target position based on the future trajectory
@@ -48,23 +51,33 @@ class Robot:
         target_speed = np.linalg.norm(target_v)
 
         # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
-        offset = (
-            (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
-            * np.array([-target_v[1], target_v[0]])
-            / target_speed
-        )
+        if target_speed > 1e-01:  # avoiding divide by 0 error
+            offset = (
+                (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
+                * np.array([-target_v[1], target_v[0]])
+                / target_speed
+            )
+        else:
+            # offset = STAND_RADIUS * np.array(
+            #     [math.cos(stand_direction), math.sin(stand_direction)]
+            # )
+            offset = STAND_RADIUS * np.array(
+                [-self.target_pos[1], self.target_pos[0]]
+            ) / np.linalg.norm(self.target_pos)
         self.target_pos += offset
 
         # calculating the angles and where the robot should move
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
+        # if target_speed > 1e-01:  # if the robot is still moving, save last position
         target_angle = math.atan2(
             direction[1], direction[0]
         )  # angle is + for cw and - for ccw
+            # stand_direction = target_angle
+        # else:
+            # target_angle = stand_direction
 
         angle_diff = self.angle_difference(target_angle)
-        print("target angle:", target_angle)
-        print("angle_diff", angle_diff)
 
         # calculating the angular velocity
         if abs(angle_diff) > MAX_W:
@@ -76,14 +89,12 @@ class Robot:
         if distance < MAX_V:
             # if within the stopping range, then moves incrementally closer to the target
             v = distance * np.array(
-                # [math.cos(self.theta + w), math.sin(self.theta + w)]
-                # [math.cos(self.theta + w), math.sin(self.theta + w)]
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
             )
         else:
             v = MAX_V * np.array(
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
-            )  # ranges the max velocity depending on proportion of distance to entire screen
+            )
 
         return [v, w]
 
