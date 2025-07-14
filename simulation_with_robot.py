@@ -121,7 +121,9 @@ if __name__ == "__main__":
         if current_time - last_sample_time >= SAMPLING_INTERVAL_MS:
             agent.update(agent.pos[0], agent.pos[1])
             u_next = robot.policy(
-                agent.future_trajectory[:, -2:]
+                agent.future_trajectory[:, -2:],
+                agent.pos,
+                agent.past_trajectory[:, -2:]
             )  # passing in the last two positions of predicted trajectory
             robot.update(u_next)
             last_sample_time = current_time

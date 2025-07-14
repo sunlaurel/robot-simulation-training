@@ -36,28 +36,52 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target):
+    def policy(self, target, agent_pos, past_pos):
         self.target_pos = target[:, -1]
+        alpha = 0.5
+        past_target = self.target_pos
 
-        # calculating the target position based on the future trajectory
-        target_v = (target[:, -1] - target[:, 0]) / self.dt
-        target_speed = np.linalg.norm(target_v)
 
-        # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
-        if target_speed > 1e-01:  # avoiding divide by 0 error
-            offset = (
-                (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
-                * np.array([-target_v[1], target_v[0]])
-                / target_speed
-            )
-        else:
-            offset = (
-                STAND_RADIUS
-                * np.array([-self.target_pos[1], self.target_pos[0]])
-                / np.linalg.norm(self.target_pos)
-            )
+        X = np.array(agent_pos) - self.pos
+        breakpoint()
 
-        self.target_pos += offset
+        present_tangent = [past_pos[0][1] - past_pos[0][0], past_pos[1][1] - past_pos[1][0]]
+        if present_tangent == 0:
+            present_tangent += 1e-02
+        future_tangent = [target[0][1] - target[0][0], target[1][1] - target[1][0]]
+        if future_tangent == 0:
+            present_tangent += 1e-02
+
+        present_perp = np.array([-present_tangent[1], present_tangent[0]])
+        present_perp /= np.linalg.norm(present_perp)
+        future_perp = np.array([-future_tangent[1], future_tangent[0]])
+        future_perp /= np.linalg.norm(future_perp)
+
+        breakpoint()
+        t = X @ present_perp
+        t = t * future_perp
+
+        self.target_pos += t
+
+        # # calculating the target position based on the future trajectory
+        # target_v = (target[:, -1] - target[:, 0]) / self.dt
+        # target_speed = np.linalg.norm(target_v)
+
+        # # adjusting offset --> 1.25m to the right if speed > 1 m/s, or 1m if speed < 1m/s (standing still)
+        # if target_speed > 1e-01:  # avoiding divide by 0 error
+        #     offset = (
+        #         (WALK_RADIUS if target_speed > 1 else STAND_RADIUS)
+        #         * tangent_vect
+        #     )
+        # else:
+        #     offset = (
+        #         STAND_RADIUS
+        #         * tangent_vect
+        #     )
+
+        # self.target_pos += offset
+        self.target_pos[0] = alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
+        self.target_pos[1] = alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
 
         # calculating the angles and where the robot should move
         direction = np.array(self.target_pos) - self.pos
