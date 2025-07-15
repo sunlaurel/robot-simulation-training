@@ -6,6 +6,7 @@ from simulation_helper import *
 MAX_W = 10  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
+MOVE_RADIUS = 1
 
 global v_last
 v_last = np.array([1.0, 0.0])
@@ -38,14 +39,14 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target, past_pos, screen):
+    def policy(self, target, past_pos):
         global v_last
         alpha = 0.2
-        epsilon = 1e-01
+        epsilon = 0.5e-01
 
-        agent_pos = past_pos[:, -1]
-        self.target_pos = target[:, -1]
-        past_target = self.target_pos
+        agent_pos = np.copy(past_pos[:, -1])
+        self.target_pos = np.copy(target[:, -1])
+        past_target = np.copy(self.target_pos)
 
         X = np.array(self.pos) - agent_pos
         # breakpoint()
@@ -53,12 +54,11 @@ class Robot:
         present_tangent = past_pos[:, -1] - past_pos[:, -2]
         if np.linalg.norm(present_tangent) <= epsilon:
             present_tangent = v_last
+            future_tangent = v_last
+            self.target_pos = agent_pos  # want the target position to be the agent position instead of future predicted
         else:
             v_last = present_tangent
-
-        future_tangent = target[:, -1] - target[:, -2]
-        if np.linalg.norm(future_tangent) <= epsilon:
-            future_tangent = v_last
+            future_tangent = target[:, -1] - target[:, -2]
 
         present_perp = np.array([-present_tangent[1], present_tangent[0]])
         present_perp /= np.linalg.norm(present_perp)
@@ -74,12 +74,14 @@ class Robot:
 
         self.target_pos += offset
 
-        self.target_pos[0] = alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
-        self.target_pos[1] = alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
+        if not (present_tangent == v_last).all():
+            self.target_pos[0] = alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
+            self.target_pos[1] = alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
 
         # calculating the angles and where the robot should move
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
+
         target_angle = math.atan2(
             direction[1], direction[0]
         )  # angle is + for cw and - for ccw
@@ -93,7 +95,21 @@ class Robot:
             w = angle_diff
 
         # calculating the linear velocity
-        if distance < MAX_V:
+        if distance < MOVE_RADIUS:
+            # if within a certain radius, separate angular velocity and linear velocity
+            v = direction
+            target_angle = math.atan2(
+                v_last[1], v_last[0]
+            )  # angle is + for cw and - for ccw
+
+            angle_diff = self.angle_difference(target_angle)
+
+            # calculating the angular velocity
+            if abs(angle_diff) > MAX_W:
+                w = MAX_W if angle_diff > 0 else -MAX_W
+            else:
+                w = angle_diff
+        elif distance < MAX_V:
             # if within the stopping range, then moves incrementally closer to the target
             v = distance * np.array(
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
