@@ -3,10 +3,15 @@ import math
 from utils import *
 from simulation_helper import *
 
-MAX_W = 10  # max angular speed (rad/s)
-MAX_V = 1.5  # max linear speed (m/s)
+
+# TODO: add acceleration to ramp up the speed
+
+
+
+MAX_W = 3  # max angular speed (rad/s)
+MAX_V = 2.0  # max linear speed (m/s)
 RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
-MOVE_RADIUS = 1
+MOVE_RADIUS = 1.25 / 2
 
 global v_last
 v_last = np.array([1.0, 0.0])
@@ -42,7 +47,7 @@ class Robot:
     def policy(self, target, past_pos):
         global v_last
         alpha = 0.2
-        epsilon = 0.5e-01
+        epsilon = 5e-02
 
         agent_pos = np.copy(past_pos[:, -1])
         self.target_pos = np.copy(target[:, -1])
@@ -96,7 +101,7 @@ class Robot:
 
         # calculating the linear velocity
         if distance < MOVE_RADIUS:
-            # if within a certain radius, separate angular velocity and linear velocity
+            # if within a certain radius, decouple angular velocity and linear velocity
             v = direction
             target_angle = math.atan2(
                 v_last[1], v_last[0]
