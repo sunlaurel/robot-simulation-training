@@ -41,25 +41,24 @@ class Robot:
         alpha = 0.5
         past_target = self.target_pos
 
-
         X = np.array(agent_pos) - self.pos
-        breakpoint()
+        # breakpoint()
 
-        present_tangent = [past_pos[0][1] - past_pos[0][0], past_pos[1][1] - past_pos[1][0]]
-        if present_tangent == 0:
+        present_tangent = past_pos[:, -1] - past_pos[:, -2]
+        if np.linalg.norm(present_tangent) == 0:
             present_tangent += 1e-02
-        future_tangent = [target[0][1] - target[0][0], target[1][1] - target[1][0]]
-        if future_tangent == 0:
-            present_tangent += 1e-02
+        future_tangent = target[:, -1] - target[:, -2]
+        if np.linalg.norm(future_tangent) == 0:
+            future_tangent += 1e-02
 
         present_perp = np.array([-present_tangent[1], present_tangent[0]])
         present_perp /= np.linalg.norm(present_perp)
         future_perp = np.array([-future_tangent[1], future_tangent[0]])
         future_perp /= np.linalg.norm(future_perp)
 
-        breakpoint()
+        # breakpoint()
         t = X @ present_perp
-        t = t * future_perp
+        t = STAND_RADIUS * t * future_perp
 
         self.target_pos += t
 

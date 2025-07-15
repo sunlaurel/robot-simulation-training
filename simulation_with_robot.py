@@ -7,7 +7,7 @@ from utils import *
 from simulation_helper import *
 
 """ Constants """
-WIDTH, HEIGHT = 17, 10
+WIDTH, HEIGHT = 15, 8
 BG_COLOR = (255, 255, 255)
 FPS = 30
 # SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
