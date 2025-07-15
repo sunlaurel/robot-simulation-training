@@ -7,7 +7,7 @@ from utils import *
 from simulation_helper import *
 
 """ Constants """
-WIDTH, HEIGHT = 15, 8
+WIDTH, HEIGHT = 17, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
 # SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
@@ -123,7 +123,6 @@ if __name__ == "__main__":
             u_next = robot.policy(
                 agent.future_trajectory[:, -2:],
                 agent.past_trajectory[:, -2:],
-                screen
             )  # passing in the last two positions of predicted trajectory
             robot.update(u_next)
             last_sample_time = current_time

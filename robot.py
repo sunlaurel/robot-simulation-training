@@ -36,82 +36,27 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target, past_pos, screen):
+    def policy(self, target, past_pos):
         agent_pos = past_pos[:, -1]
         self.target_pos = target[:, -1]
         alpha = 1
         past_target = self.target_pos
 
         X = np.array(self.pos) - agent_pos
-        # # drawing a line for the line from the robot to the agent
-        # pygame.draw.line(
-        #     screen,
-        #     (0, 255, 0),
-        #     (meters_to_pixels(agent_pos[0]), meters_to_pixels(agent_pos[1])),
-        #     (
-        #         meters_to_pixels(self.pos[0]),
-        #         meters_to_pixels(self.pos[1]),
-        #     ),
-        #     5,
-        # )
         # breakpoint()
 
         present_tangent = past_pos[:, -1] - past_pos[:, -2]
         if np.linalg.norm(present_tangent) == 0:
             present_tangent[0] += 1
-        # # drawing a line for the present tangent line
-        # pygame.draw.line(
-        #     screen,
-        #     (255, 0, 0),
-        #     (meters_to_pixels(agent_pos[0]), meters_to_pixels(agent_pos[1])),
-        #     (
-        #         meters_to_pixels(agent_pos[0] + present_tangent[0]),
-        #         meters_to_pixels(agent_pos[1] + present_tangent[1]),
-        #     ),
-        #     5,
-        # )
         future_tangent = target[:, -1] - target[:, -2]
         if np.linalg.norm(future_tangent) == 0:
             future_tangent += 1e-02
-        # # drawing a line for the future tangent line
-        # pygame.draw.line(
-        #     screen,
-        #     (255, 0, 0),
-        #     (meters_to_pixels(target[0][-1]), meters_to_pixels(target[1][-1])),
-        #     (
-        #         meters_to_pixels(target[0][-1] + future_tangent[0]),
-        #         meters_to_pixels(target[1][-1] + future_tangent[1]),
-        #     ),
-        #     5,
-        # )
 
         present_perp = np.array([-present_tangent[1], present_tangent[0]])
         present_perp /= np.linalg.norm(present_perp)
-        # # drawing a line for the present perpendicular line
-        # pygame.draw.line(
-        #     screen,
-        #     (0, 0, 255),
-        #     (meters_to_pixels(agent_pos[0]), meters_to_pixels(agent_pos[1])),
-        #     (
-        #         meters_to_pixels(agent_pos[0] + present_perp[0]),
-        #         meters_to_pixels(agent_pos[1] + present_perp[1]),
-        #     ),
-        #     5,
-        # )
 
         future_perp = np.array([-future_tangent[1], future_tangent[0]])
         future_perp /= np.linalg.norm(future_perp)
-        # # drawing a line for the future perpendicular line
-        # pygame.draw.line(
-        #     screen,
-        #     (0, 0, 255),
-        #     (meters_to_pixels(target[0][-1]), meters_to_pixels(target[1][-1])),
-        #     (
-        #         meters_to_pixels(target[0][-1] + future_perp[0]),
-        #         meters_to_pixels(target[1][-1] + future_perp[1]),
-        #     ),
-        #     5,
-        # )
 
         # breakpoint()
         t = X @ present_perp
