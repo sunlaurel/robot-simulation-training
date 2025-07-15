@@ -38,7 +38,7 @@ class Robot:
     def policy(self, target, past_pos):
         agent_pos = past_pos[:, -1]
         self.target_pos = target[:, -1]
-        alpha = 0.05
+        alpha = 0.2
         past_target = self.target_pos
 
         X = np.array(self.pos) - agent_pos
