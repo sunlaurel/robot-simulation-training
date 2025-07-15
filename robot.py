@@ -114,7 +114,9 @@ class Robot:
 
         # breakpoint()
         t = X @ present_perp
-        offset = STAND_RADIUS * t * future_perp
+        offset = t * future_perp
+        offset /= np.linalg.norm(offset)
+        offset *= STAND_RADIUS
 
         self.target_pos += offset
 
