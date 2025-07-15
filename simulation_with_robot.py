@@ -123,6 +123,7 @@ if __name__ == "__main__":
             u_next = robot.policy(
                 agent.future_trajectory[:, -2:],
                 agent.past_trajectory[:, -2:],
+                screen
             )  # passing in the last two positions of predicted trajectory
             robot.update(u_next)
             last_sample_time = current_time

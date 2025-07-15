@@ -35,7 +35,7 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target, past_pos):
+    def policy(self, target, past_pos, screen):
         agent_pos = past_pos[:, -1]
         self.target_pos = target[:, -1]
         alpha = 0.5
