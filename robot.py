@@ -5,8 +5,7 @@ from simulation_helper import *
 
 MAX_W = 10  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
-STAND_RADIUS = 1  # if human is stopped, robot stay 1m away from human
-WALK_RADIUS = 1.5  # if human is walking, robot moves 1.5m away from human
+RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
 
 
 class Robot:
@@ -39,7 +38,7 @@ class Robot:
     def policy(self, target, past_pos):
         agent_pos = past_pos[:, -1]
         self.target_pos = target[:, -1]
-        alpha = 1
+        alpha = 0.5
         past_target = self.target_pos
 
         X = np.array(self.pos) - agent_pos
@@ -62,7 +61,7 @@ class Robot:
         t = X @ present_perp
         offset = t * future_perp
         offset /= np.linalg.norm(offset)
-        offset *= STAND_RADIUS
+        offset *= RADIUS
 
         self.target_pos += offset
 
