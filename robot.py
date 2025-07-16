@@ -7,7 +7,6 @@ MAX_W = 10  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
 
-
 class Robot:
 
     def __init__(
@@ -47,7 +46,7 @@ class Robot:
         present_tangent = past_pos[:, -1] - past_pos[:, -2]
         if np.linalg.norm(present_tangent) == 0:
             present_tangent[0] += 1
-        future_tangent = target[:, -1] - target[:, -2]
+        future_tangent = target[:, -1] - past_pos[:, -1]
         if np.linalg.norm(future_tangent) == 0:
             future_tangent += 1e-02
 
