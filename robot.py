@@ -4,14 +4,10 @@ from utils import *
 from simulation_helper import *
 
 
-# TODO: add acceleration to ramp up the speed
-
-
-
 MAX_W = 3  # max angular speed (rad/s)
-MAX_V = 2.0  # max linear speed (m/s)
+MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
-MOVE_RADIUS = 1.25 / 2
+MOVE_RADIUS = 1.25
 
 global v_last
 v_last = np.array([1.0, 0.0])
@@ -116,7 +112,7 @@ class Robot:
                 w = angle_diff
         elif distance < MAX_V:
             # if within the stopping range, then moves incrementally closer to the target
-            v = distance * np.array(
+            v = 1.5 * distance * np.array(
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
             )
 
