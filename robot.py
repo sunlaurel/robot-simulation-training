@@ -116,7 +116,7 @@ class Robot:
                 [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
             )
 
-            if np.linalg.norm(v) < 1e-01:
+            if np.linalg.norm(v) < 0.5:
                 v = np.array([0.0, 0.0])
                 w = 0.0
         else:
