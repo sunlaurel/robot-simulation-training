@@ -7,7 +7,7 @@ from simulation_helper import *
 MAX_W = 3  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
-MOVE_RADIUS = 1.25
+MOVE_RADIUS = 1.25 / 2
 
 global v_last
 v_last = np.array([1.0, 0.0])
