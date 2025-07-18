@@ -2,7 +2,7 @@ import pygame
 import sys
 import math
 from agent import Agent
-from robot import Robot, RADIUS
+from robot import Robot, RADIUS, MOVE_RADIUS
 from utils import *
 from simulation_helper import *
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
             agent.update(agent.pos[0], agent.pos[1])
             u_next = robot.policy(
                 agent.future_trajectory[:, -2:],
-                agent.past_trajectory[:, -2:],
+                agent.past_trajectory[:, -2:]
             )  # passing in the last two positions of predicted trajectory
             robot.update(u_next)
             last_sample_time = current_time
@@ -133,6 +133,13 @@ if __name__ == "__main__":
             np.vectorize(meters_to_pixels)(agent.pos),
             int(meters_to_pixels(RADIUS)),
         )
+
+        draw_transparent_circle(
+            screen,
+            np.vectorize(meters_to_pixels)(robot.pos),
+            int(meters_to_pixels(MOVE_RADIUS))
+        )
+
         agent.draw(screen)
         robot.draw(screen)
         display_text(agent)
