@@ -2,7 +2,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import json
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from typing import Callable
 
+
+""" Multi Layer Perceptron (MLP) """
 class MultiLayer(nn.Module):
 
     def __init__(
@@ -36,34 +41,34 @@ class MultiLayer(nn.Module):
         return out
 
 
-class MultiLayer2(nn.Module):
+# class MultiLayer2(nn.Module):
 
-    def __init__(
-        self,
-        input_size,
-        hidden_layer1,
-        hidden_layer2,
-        hidden_layer3,
-        hidden_layer4,
-        output_size,
-    ):
-        super().__init__()  # Inherited from the parent class nn.Module
-        self.linear1 = nn.Linear(input_size, hidden_layer1)
-        self.linear2 = nn.Linear(hidden_layer1, hidden_layer2)
-        self.linear3 = nn.Linear(hidden_layer2, hidden_layer3)
-        self.linear4 = nn.Linear(hidden_layer3, hidden_layer4)
-        self.linear5 = nn.Linear(hidden_layer4, output_size)
+#     def __init__(
+#         self,
+#         input_size,
+#         hidden_layer1,
+#         hidden_layer2,
+#         hidden_layer3,
+#         hidden_layer4,
+#         output_size,
+#     ):
+#         super().__init__()  # Inherited from the parent class nn.Module
+#         self.linear1 = nn.Linear(input_size, hidden_layer1)
+#         self.linear2 = nn.Linear(hidden_layer1, hidden_layer2)
+#         self.linear3 = nn.Linear(hidden_layer2, hidden_layer3)
+#         self.linear4 = nn.Linear(hidden_layer3, hidden_layer4)
+#         self.linear5 = nn.Linear(hidden_layer4, output_size)
 
-    def forward(self, x):
-        batch_size = x.size(0)
-        x = x.view(batch_size, -1)
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
-        x = F.relu(self.linear3(x))
-        x = F.relu(self.linear4(x))
-        out = self.linear5(x)
-        out = out.view(batch_size, 2, -1)
-        return out
+#     def forward(self, x):
+#         batch_size = x.size(0)
+#         x = x.view(batch_size, -1)
+#         x = F.relu(self.linear1(x))
+#         x = F.relu(self.linear2(x))
+#         x = F.relu(self.linear3(x))
+#         x = F.relu(self.linear4(x))
+#         out = self.linear5(x)
+#         out = out.view(batch_size, 2, -1)
+#         return out
 
 
 """ Baseline models """

@@ -1,6 +1,10 @@
 from utils import *
 from train_helper import *
 
+# TODO: reorganize so that all the training scripts are in one folder
+# TODO: reorganize so that all the simulation scripts are in another folder
+
+
 # loading in config.json
 with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
