@@ -1,9 +1,9 @@
 {
     "future-steps": 10,
-    "past-steps": 17,
-    "offset": true,
-    "rotate": true,
-    "add-noise": true,
+    "past-steps": 10,
+    "offset": false,
+    "rotate": false,
+    "add-noise": false,
     "scale": false,
     "num-features": 2
 }
