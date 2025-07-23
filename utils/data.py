@@ -122,10 +122,16 @@ class GeneratedTrajectoryDataset(Dataset):
             X_past[1],
             label="Original Past Trajectory",
         )
-        plt.quiver(generated_traj[0], generated_traj[1], past_relative_vectors[0], past_relative_vectors[1], label="Past Relative Vectors")
         plt.scatter(X_future[0], X_future[1], label="Future Trajectory")
         plt.scatter(
             generated_traj[0], generated_traj[1], label="Generated Robot Trajectory"
+        )
+        plt.quiver(
+            generated_traj[0],
+            generated_traj[1],
+            past_relative_vectors[0],
+            past_relative_vectors[1],
+            label="Past Relative Vectors",
         )
         plt.scatter(
             X_future[0, -1] + future_pos[0],
