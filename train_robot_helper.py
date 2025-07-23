@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import torch
 import random
 import numpy as np
-from utils import models
 
 
 def T_train(
@@ -65,7 +64,7 @@ def T_test(X_past, X_future, offset=True, scale=True):
                 torch.tensor(X_future[:, 1] - X_start[1]),
             ),
             dim=1,
-    )
+        )
 
     if scale:
         X_past = X_past / 2
@@ -89,7 +88,6 @@ def train(
     num_batches = 0
 
     for i, (input_pos, target_pos) in enumerate(data_generator):
-        breakpoint()
         input_pos, target_pos = T_train(
             input_pos,
             target_pos,
@@ -101,14 +99,7 @@ def train(
 
         optimizer.zero_grad()  # Gradients need to be reset each batch
         prediction = network(input_pos.float())
-        # prediction = network(
-        #     torch.cat((input_pos.float(), input_velocity.float()), dim=1)
-        # )  # Forward pass: compute the next positions given previous positions
-        # breakpoint()
         loss = loss_function(prediction, target_pos.float())
-        # loss = loss_function(
-        #     prediction, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
-        # )  # Compute the loss: difference between the output and correct result
         loss.backward()  # Backward pass: compute the gradients of the model with respect to the loss
         optimizer.step()
         avg_loss += loss.item()
@@ -127,34 +118,16 @@ def test(
     test_loss = 0
     num_batches = 0
 
-    # recording the loss for the baseline models
-    stand_test_loss = 0
-    baseline_test_loss = 0
-
     with torch.no_grad():
         for input_pos, target_pos in test_loader:
             input_pos, target_pos = T_test(
                 input_pos, target_pos, offset=offset, scale=scale
             )
+            breakpoint()
             output = network(input_pos.float())
-            stand_output = models.stand_model(input_pos.float())
-            baseline_output = models.constant_velocity_model(input_pos.float())
-            # output = network(
-            #     torch.cat((input_pos.float(), input_velocity.float()), dim=1)
-            # )
             test_loss += loss_function(output, target_pos.float())
-            stand_test_loss += loss_function(stand_output, target_pos.float())
-            baseline_test_loss += loss_function(baseline_output, target_pos.float())
-            # test_loss += loss_function(
-            #     output, torch.cat((target_pos.float(), target_velocity.float()), dim=1)
-            # ).item()
             num_batches += 1
-    # return test_loss / num_batches
-    return (
-        test_loss / num_batches,
-        stand_test_loss / num_batches,
-        baseline_test_loss / num_batches,
-    )
+    return test_loss / num_batches
 
 
 def logResults(
@@ -164,22 +137,16 @@ def logResults(
     train_loss_history,
     test_loss,
     test_loss_history,
-    stand_loss,
-    stand_test_loss_history,
-    baseline_loss,
-    baseline_test_loss_history,
     epoch_counter,
     print_interval=1000,
 ):
     if epoch % print_interval == 0:
         print(
-            "Epoch [%d/%d], Train Loss: %.4f, Test Loss: %.4f, Stand Loss: %.4f, Baseline Loss: %.4f"
-            % (epoch + 1, num_epochs, train_loss, test_loss, stand_loss, baseline_loss)
+            "Epoch [%d/%d], Train Loss: %.4f, Test Loss: %.4f"
+            % (epoch + 1, num_epochs, train_loss, test_loss)
         )
     train_loss_history.append(train_loss)
     test_loss_history.append(test_loss)
-    stand_test_loss_history.append(stand_loss)
-    baseline_test_loss_history.append(baseline_loss)
     epoch_counter.append(epoch)
 
 
@@ -187,8 +154,6 @@ def graphLoss(
     epoch_counter,
     train_loss_hist,
     test_loss_hist,
-    stand_test_loss_hist,
-    baseline_test_loss_hist,
     loss_name="Loss",
     start=0,
     graph_stand=False,
@@ -196,16 +161,8 @@ def graphLoss(
     fig = plt.figure()
     plt.plot(epoch_counter[start:], train_loss_hist[start:], color="blue")
     plt.plot(epoch_counter[start:], test_loss_hist[start:], color="red")
-    plt.plot(epoch_counter[start:], baseline_test_loss_hist[start:], color="purple")
-    if graph_stand:
-        plt.plot(epoch_counter[start:], stand_test_loss_hist[start:], color="green")
-        plt.legend(
-            ["Train Loss", "Test Loss", "Baseline Loss", "Standing Loss"],
-            loc="upper right",
-        )
-    else:
-        plt.legend(["Train Loss", "Test Loss", "Baseline Loss"], loc="upper right")
-    plt.xlabel("#Epochs")
+    plt.legend(["Train Loss", "Test Loss"], loc="upper right")
+    plt.xlabel("# of Epochs")
     plt.ylabel(loss_name)
     plt.show()
 
@@ -234,10 +191,6 @@ def trainAndGraph(
     epoch_counter = []
     train_loss_history = []
 
-    # Arrays to store testing history of the baseline models
-    stand_test_loss_history = []
-    baseline_test_loss_history = []
-
     for epoch in range(num_epochs):
         avg_loss = train(
             network,
@@ -262,7 +215,7 @@ def trainAndGraph(
         #     network, testing_generator, loss_function, offset=offset, scale=scale
         # )
 
-        test_loss, stand_loss, baseline_loss = test(
+        test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale
         )
 
@@ -274,10 +227,6 @@ def trainAndGraph(
             train_loss_history,
             test_loss,
             test_loss_history,
-            stand_loss,
-            stand_test_loss_history,
-            baseline_loss,
-            baseline_test_loss_history,
             epoch_counter,
             logging_interval,
         )
@@ -287,6 +236,4 @@ def trainAndGraph(
         epoch_counter,
         train_loss_history,
         test_loss_history,
-        stand_test_loss_history,
-        baseline_test_loss_history,
     )

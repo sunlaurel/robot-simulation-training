@@ -1,0 +1,86 @@
+import utils
+import torch
+from torch.utils.data import DataLoader
+import json
+import matplotlib.pyplot as plt
+from train_helper import T_test
+
+# TODO: need to plot and include the future and past positions to graph
+# TODO: need to adjust data.py to also return the past and future positions
+
+
+def plot_predicted_trajectory(x_past, x_future, x_target, x_predicted):
+    """Graphs the predicted trajectory compared to the actual trajectory"""
+    breakpoint()
+    x_past_coords = x_past[0].numpy()
+    y_past_coords = x_past[1].numpy()
+    x_future_coords = x_future[0].numpy()
+    y_future_coords = x_future[1].numpy()
+    x_target_coord = x_target[0]
+    y_target_coord = x_target[1]
+    x_predicted_coord = x_predicted[0]
+    y_predicted_coord = x_predicted[1]
+
+    plt.scatter(x_past_coords, y_past_coords, marker="o", color="r")
+    plt.scatter(x_future_coords, y_future_coords, marker="o", color="p")
+    plt.scatter(x_target_coord, y_target_coord, marker="o", color="b")
+    plt.scatter(x_predicted_coord, y_predicted_coord, marker="o", color="g")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("Positions")
+    plt.legend(
+        [
+            "Past trajectory",
+            "Target Future Robot Position",
+            "Predicted Future Robot Position",
+        ]
+    )
+    plt.show()
+
+
+if __name__ == "__main__":
+
+    with open(file="./utils/config.json", mode="r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    # Setting the constants
+    offset_flag = data["offset"]
+    scale_flag = data["scale"]
+    noise_flag = data["add-noise"]
+    rotate_flag = data["rotate"]
+    past_steps = data["past-steps"]
+    future_steps = data["future-steps"]
+
+    network = utils.models.MultiLayerRobot(
+        input_size=2 * past_steps,
+        hidden_layer1=100,
+        hidden_layer2=100,
+        output_size=2,
+    )
+
+    save_path = f"./best-weights-robot/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if noise_flag else ''}.pth"
+    print("Model visualized:", save_path)
+    network.load_state_dict(torch.load(save_path, weights_only=True))
+
+    _, testing_data = utils.data.GenTrainTestGeneratedDatasets(
+        "./training-data/crowd_data.csv", past_steps, future_steps
+    )
+
+    data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
+
+    for x_past, x_future in data_loader:
+        x_past, x_future = T_test(
+            x_past, x_future, offset=offset_flag, scale=scale_flag
+        )
+
+        # Plot the trajectory
+        with torch.no_grad():
+            predicted = network(x_past.float()).squeeze()
+
+        plot_predicted_trajectory(
+            x_past=x_past[0],
+            x_future=x_future[0],
+            x_predicted=predicted[0:2],
+        )
+
+        # break  # Only plot the first batch to avoid unnecessary looping

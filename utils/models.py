@@ -2,12 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import json
-import numpy as np
-from sklearn.neighbors import NearestNeighbors
-from typing import Callable
 
 
-""" Multi Layer Perceptron (MLP) """
+""" Multi Layer Perceptron (MLP) for preidcting N steps into the future """
 class MultiLayer(nn.Module):
 
     def __init__(
@@ -37,6 +34,40 @@ class MultiLayer(nn.Module):
         out = out.view(
             batch_size, features, -1
         )  # Reshape the output to (batch_size, 2, future_time_steps)
+        out /= self.scale_factor
+        return out
+
+
+""" Multi Layer Perceptron (MLP) for preidcting N steps into the future """
+class MultiLayerRobot(nn.Module):
+
+    def __init__(
+        self, input_size, hidden_layer1, hidden_layer2, output_size, scale_factor=1
+    ):
+        super().__init__()  # Inherited from the parent class nn.Module
+        self.scale_factor = scale_factor
+        self.linear1 = nn.Linear(
+            input_size, hidden_layer1
+        )  # Linear layer: input_size -> hidden_layer
+        self.linear2 = nn.Linear(
+            hidden_layer1, hidden_layer2
+        )  # Linear layer: hidden_layer -> num_classes
+        self.linear3 = nn.Linear(
+            hidden_layer2, output_size
+        )  # Linear layer: hidden_layer -> num_classes
+
+    def forward(
+        self, x, features=2
+    ):  # Forward pass which defines how the layers relate the input x to the output
+        x *= self.scale_factor
+        batch_size = x.size(0)  # Store the batch size before flattening
+        x = x.view(batch_size, -1)  # Flatten the input x
+        x = F.relu(self.linear1(x))  # Linear transform, then relu
+        x = F.relu(self.linear2(x))
+        out = self.linear3(x)
+        out = out.view(
+            batch_size, features
+        )  # Reshape the output to (batch_size, 2)
         out /= self.scale_factor
         return out
 

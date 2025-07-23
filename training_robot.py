@@ -9,10 +9,10 @@ with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
 
 # Training parameters
-num_epochs = 1000
+num_epochs = 10
 print_interval = 1
-learning_rate = 0.001
-batch_size = 100
+learning_rate = 0.01
+batch_size = 50
 past_steps = data["past-steps"]
 future_steps = data["future-steps"]
 # num_features = data["num-features"]  # num_features indicates the number of variables (ie: x-pos, y-pos, x-velocity, y-velocity)
@@ -23,9 +23,9 @@ rotate = data["rotate"]
 add_noise = data["add-noise"]
 scale = data["scale"]
 
-# Set optimizer (adam) and loss function (mse)
+# Set optimizer (adam) and loss function (mae)
 # breakpoint()
-network = MultiLayer(2 * past_steps, 100, 100, 2 * future_steps)
+network = MultiLayerRobot(2 * past_steps, 100, 100, 2)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
 

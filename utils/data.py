@@ -55,6 +55,8 @@ class GeneratedTrajectoryDataset(Dataset):
         return self.len
 
     def __getitem__(self, idx):
+        # TODO: check to make sure that the future position is reasonable
+
         random_person_id = int(random.choice(self.person_ids))
         X = self.position_data[random_person_id]
         # V = self.velocity_data[random_person_id]
@@ -82,6 +84,19 @@ class GeneratedTrajectoryDataset(Dataset):
             generated_x += step
             generated_y += slope * step
 
+        generated_traj = np.array(generated_traj)
+
+        # shifting it to the robot's coordinate frame
+        generated_traj[0] -= generated_traj[0, -1]
+        generated_traj[1] -= generated_traj[1, -1]
+        X_past[0] -= generated_x
+        X_past[1] -= generated_y
+        X_future[0] -= generated_x
+        X_future[1] -= generated_y
+        print("X_past:", X_past)
+        print("X_future:", X_future)
+
+        # breakpoint()
         past_relative_vectors = X_past - generated_traj
 
         # future point is the 1m from the person's right side
@@ -89,43 +104,40 @@ class GeneratedTrajectoryDataset(Dataset):
         future_pos = torch.tensor(
             [-(X_future[1, -1] - X_future[1, -2]), X_future[0, -1] - X_future[0, -2]]
         )
-        future_pos /= np.linalg.norm(future_pos)
-        breakpoint()
-        future_vector = (np.add(X_future[:, -1], future_pos)) - np.array()
+
+        # TODO: go back and fix this issue
+        if np.linalg.norm(future_pos) == 0:
+            breakpoint()
+            future_pos = torch.tensor([0.0, 0.0])
+            print("Future pos is 0")
+        else:
+            future_pos /= np.linalg.norm(future_pos)
+
+        # future_vector = (np.add(X_future[:, -1], future_pos)) - np.array(
+        #     generated_traj
+        # )[:, -1]
+
         plt.scatter(
             X_past[0],
             X_past[1],
-            label="Original Trajectory",
+            label="Original Past Trajectory",
         )
-
+        plt.quiver(generated_traj[0], generated_traj[1], past_relative_vectors[0], past_relative_vectors[1], label="Past Relative Vectors")
         plt.scatter(X_future[0], X_future[1], label="Future Trajectory")
-        plt.scatter(generated_traj[0], generated_traj[1], label="Generated Trajectory")
-        plt.quiver(
-            X_future[0, -1],
-            X_future[1, -1],
-            future_pos[0],
-            future_pos[1],
-            label="Offset from future trajectory",
-            color="purple",
+        plt.scatter(
+            generated_traj[0], generated_traj[1], label="Generated Robot Trajectory"
         )
         plt.scatter(
             X_future[0, -1] + future_pos[0],
             X_future[1, -1] + future_pos[1],
             color="red",
-            label="Future position",
-        )
-        plt.quiver(
-            generated_traj[0][-1],
-            generated_traj[1][-1],
-            future_vector[0],
-            future_vector[1],
-            label="Robot Future Vector",
-            color="gray",
+            label="Future Position",
         )
         plt.legend()
         plt.show()
 
-        return past_relative_vectors, future_vector
+        return past_relative_vectors, future_pos
+        # return past_relative_vectors, future_vector
 
 
 def GenTrainTestDatasets(csv_path, past_steps, future_steps):
@@ -182,21 +194,8 @@ class TrajectoryDataset(Dataset):
         # Determine the indices for past and future points
         X_past = X[:, random_frame - self.N_past + 1 : random_frame + 1]
         X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future]
-        # V_past = V[:, random_frame - self.N_past + 1 : random_frame + 1]
-        # V_future = V[:, random_frame + 1 : random_frame + 1 + self.N_future]
 
-        return X_past, X_future  # , V_past, V_future
-
-        # # Convert past and future points to tensors
-        # past_x = torch.tensor(past_points.iloc[:, 0].values, dtype=torch.float32)
-        # past_y = torch.tensor(past_points.iloc[:, 1].values, dtype=torch.float32)
-        # future_x = torch.tensor(future_points.iloc[:, 0].values, dtype=torch.float32)
-        # future_y = torch.tensor(future_points.iloc[:, 1].values, dtype=torch.float32)
-
-        # # Concatenate past and future to form a trajectory
-        # x_trajectory = torch.cat([past_x, future_x])
-        # y_trajectory = torch.cat([past_y, future_y])
-        # return x_trajectory, y_trajectory
+        return X_past, X_future
 
 
 def plot_trajectory(x_past, x_future, v_past=None, v_future=None):
@@ -246,79 +245,3 @@ def plot_trajectory(x_past, x_future, v_past=None, v_future=None):
     axes[1].set_ylabel("y")
     axes[1].grid(True)
     plt.show()
-
-
-# # Example usage:
-# csv_file = "entire_scene_crowd_data_sample.csv"  # Path to your CSV file
-# dataset = TrajectoryDataset(csv_file)
-# # dataset.__getitem__(300)
-
-
-# # Create a DataLoader
-# dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-
-# # Iterate through the DataLoader
-# for x_past, x_future, v_past, v_future in dataloader:
-#     # Plot the trajectory
-#     plot_trajectory(x_past[0], x_future[0], v_past[0], v_future[0])
-#     # break  # Only plot the first batch to avoid unnecessary looping
-
-
-""" For predicted path visualization and graphing it out in case I need it again """
-# dt = 0.12
-# vx_past_coords = v_past[0, :].numpy()
-# vy_past_coords = v_past[1, :].numpy()
-# vx_future_coords = v_future[0, :].numpy()
-# vy_future_coords = v_future[1, :].numpy()
-# vx_predicted_coords = v_predicted[0, :].numpy()
-# vy_predicted_coords = v_predicted[1, :].numpy()
-
-# axes[0].plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="r")
-# axes[0].plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="b")
-# axes[0].plot(
-#     x_predicted_coords, y_predicted_coords, marker="o", linestyle="-", color="g"
-# )
-# axes[0].set_xlabel("x")
-# axes[0].set_ylabel("y")
-# axes[0].set_title("Positions")
-
-# axes[1].plot(x_past_coords, y_past_coords, marker="o", linestyle="-", color="k")
-# axes[1].plot(x_future_coords, y_future_coords, marker="o", linestyle="-", color="k")
-# axes[1].quiver(
-#     x_past_coords,
-#     y_past_coords,
-#     vx_past_coords,
-#     vy_past_coords,
-#     color="r",
-#     angles="xy",
-#     scale_units="xy",
-#     scale=1 / dt,
-# )
-# axes[1].quiver(
-#     x_future_coords,
-#     y_future_coords,
-#     vx_future_coords,
-#     vy_future_coords,
-#     color="b",
-#     angles="xy",
-#     scale_units="xy",
-#     scale=1 / dt,
-# )
-# axes[1].quiver(
-#     x_predicted_coords,
-#     y_predicted_coords,
-#     vx_predicted_coords,
-#     vy_predicted_coords,
-#     color="g",
-#     angles="xy",
-#     scale_units="xy",
-#     scale=1 / dt,
-# )
-
-# axes[1].set_title("Velocity Vectors")
-# axes[1].set_xlabel("x")
-# axes[1].set_ylabel("y")
-# axes[1].grid(True)
-
-# fig.tight_layout()
-# plt.show()
