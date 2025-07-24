@@ -106,6 +106,7 @@ class GeneratedTrajectoryDataset(Dataset):
         )
 
         # TODO: go back and fix this issue
+        # TODO: test
         if np.linalg.norm(future_pos) == 0:
             breakpoint()
             future_pos = torch.tensor([0.0, 0.0])
