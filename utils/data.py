@@ -102,7 +102,7 @@ class GeneratedTrajectoryDataset(Dataset):
             [-(X_past[1, -1] - X_past[1, -2]), X_past[0, -1] - X_past[0, -2]]
         )
 
-        # TODO: need to go back and revisit case where the robot isn't moving
+        # # TODO: need to go back and revisit case where the robot isn't moving
         if np.linalg.norm(present_perp) > epsilon:
             present_perp /= np.linalg.norm(present_perp)
 
@@ -123,39 +123,39 @@ class GeneratedTrajectoryDataset(Dataset):
         # breakpoint()
         future_pos = X_future[:, -1] + offset
 
-        # Graphing to make sure that everything makes sense
-        plt.scatter(
-            X_past[0],
-            X_past[1],
-            label="Original Past Trajectory",
-        )
-        plt.scatter(X_future[0], X_future[1], label="Future Trajectory")
-        plt.scatter(
-            generated_traj[0], generated_traj[1], label="Generated Robot Trajectory"
-        )
-        plt.quiver(
-            generated_traj[0],
-            generated_traj[1],
-            past_relative_vectors[0],
-            past_relative_vectors[1],
-            label="Past Relative Vectors",
-        )
-        plt.quiver(
-            [X_past[0, -1], X_past[0, -1], X_future[0, -1]],
-            [X_past[1, -1], X_past[1, -1], X_future[1, -1]],
-            [X[0] / np.linalg.norm(X), present_perp[0], future_perp[0]],
-            [X[1] / np.linalg.norm(X), present_perp[1], future_perp[1]],
-            color="gray",
-            label="Debugging Vectors",
-        )
-        plt.scatter(
-            future_pos[0],
-            future_pos[1],
-            color="red",
-            label="Future Position",
-        )
-        plt.legend()
-        plt.show()
+        # # Graphing to make sure that everything makes sense
+        # plt.scatter(
+        #     X_past[0],
+        #     X_past[1],
+        #     label="Original Past Trajectory",
+        # )
+        # plt.scatter(X_future[0], X_future[1], label="Future Trajectory")
+        # plt.scatter(
+        #     generated_traj[0], generated_traj[1], label="Generated Robot Trajectory"
+        # )
+        # plt.quiver(
+        #     generated_traj[0],
+        #     generated_traj[1],
+        #     past_relative_vectors[0],
+        #     past_relative_vectors[1],
+        #     label="Past Relative Vectors",
+        # )
+        # plt.quiver(
+        #     [X_past[0, -1], X_past[0, -1], X_future[0, -1]],
+        #     [X_past[1, -1], X_past[1, -1], X_future[1, -1]],
+        #     [X[0] / np.linalg.norm(X), present_perp[0], future_perp[0]],
+        #     [X[1] / np.linalg.norm(X), present_perp[1], future_perp[1]],
+        #     color="gray",
+        #     label="Debugging Vectors",
+        # )
+        # plt.scatter(
+        #     future_pos[0],
+        #     future_pos[1],
+        #     color="red",
+        #     label="Future Position",
+        # )
+        # plt.legend()
+        # plt.show()
 
         return past_relative_vectors, future_pos, X_past, X_future, generated_traj
         # return past_relative_vectors, future_vector
