@@ -9,7 +9,7 @@ with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
 
 # Training parameters
-num_epochs = 100
+num_epochs = 150
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
