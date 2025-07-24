@@ -87,7 +87,7 @@ def train(
     avg_loss = 0
     num_batches = 0
 
-    for i, (input_pos, target_pos) in enumerate(data_generator):
+    for i, (input_pos, target_pos, _, _, _) in enumerate(data_generator):
         input_pos, target_pos = T_train(
             input_pos,
             target_pos,
@@ -119,11 +119,11 @@ def test(
     num_batches = 0
 
     with torch.no_grad():
-        for input_pos, target_pos in test_loader:
+        for input_pos, target_pos, _, _, _ in test_loader:
             input_pos, target_pos = T_test(
                 input_pos, target_pos, offset=offset, scale=scale
             )
-            breakpoint()
+            # breakpoint()
             output = network(input_pos.float())
             test_loss += loss_function(output, target_pos.float())
             num_batches += 1
@@ -210,10 +210,6 @@ def trainAndGraph(
             save_path = f"./best-weights-robot/best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
 
             torch.save(best_model_weights, save_path)  # Load weights on disk
-
-        # test_loss = test(
-        #     network, testing_generator, loss_function, offset=offset, scale=scale
-        # )
 
         test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale

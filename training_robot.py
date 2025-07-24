@@ -9,10 +9,10 @@ with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
 
 # Training parameters
-num_epochs = 10
+num_epochs = 100
 print_interval = 1
-learning_rate = 0.01
-batch_size = 50
+learning_rate = 0.001
+batch_size = 100
 past_steps = data["past-steps"]
 future_steps = data["future-steps"]
 # num_features = data["num-features"]  # num_features indicates the number of variables (ie: x-pos, y-pos, x-velocity, y-velocity)

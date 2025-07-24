@@ -8,6 +8,9 @@ import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
 
+""" Constants """
+RADIUS = 1
+
 
 def GenTrainTestGeneratedDatasets(csv_path, past_steps, future_steps):
     csv_data = pd.read_csv(csv_path)
@@ -39,12 +42,9 @@ class GeneratedTrajectoryDataset(Dataset):
             self.person_ids, total=len(self.person_ids), dynamic_ncols=True
         ):
             trajdata = csv_data[csv_data["id"] == person_id].sort_values(by="time")
-            if (
-                len(trajdata) <= self.N_past + self.N_future
-            ):  # look at this again later to see if it should be <= or just <
+            if len(trajdata) <= self.N_past + self.N_future:
                 continue
             self.position_data[person_id] = trajdata[["x", "y"]].to_numpy().T  # 2 x N
-            # self.velocity_data[person_id] = trajdata[["v_x","v_y"]].to_numpy().T # 2 x N
 
         self.person_ids = list(
             self.position_data.keys()
@@ -56,28 +56,28 @@ class GeneratedTrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         # TODO: check to make sure that the future position is reasonable
-
         random_person_id = int(random.choice(self.person_ids))
         X = self.position_data[random_person_id]
-        # V = self.velocity_data[random_person_id]
         random_frame = int(random.randint(self.N_past, X.shape[1] - 1 - self.N_future))
 
         # Determine the indices for past and future points
-        X_past = X[:, random_frame - self.N_past + 1 : random_frame + 1]
-        X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future]
+        X_past = X[:, random_frame - self.N_past + 1 : random_frame + 1].copy()
+        X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
-        # generating random slope from -2 to 2
-        slope = random.random() * 4 - 1
-        # some initial random offset from -1 to 1
-        offset = random.random() * 2 - 1
-        # step is evenly spaced by the end and start x coords
-        step = (X_past[0, -1] - X_past[0, 0]) / self.N_past
+        slope = random.random() * 4 - 1  # generating random slope from -2 to 2
+        initial_offset = random.uniform(-1, 1)
+        step = (
+            X_past[0, -1] - X_past[0, 0]
+        ) / self.N_past  # step is evenly spaced by the end and start x coords
+        # need to change the steps to be beyond just the end and start x coords
+        epsilon = 5e-02
 
         # starting points for the generated line
         generated_x = X_past[0, 0]
-        generated_y = X_past[1, 0] + offset
+        generated_y = X_past[1, 0] + initial_offset
 
         generated_traj = [[generated_x], [generated_y]]
+        # make this more efficient & try doing it without a for loop
         for j in range(self.N_past - 1):
             generated_traj[0].append(generated_x + step)
             generated_traj[1].append(generated_y + slope * step)
@@ -93,31 +93,37 @@ class GeneratedTrajectoryDataset(Dataset):
         X_past[1] -= generated_y
         X_future[0] -= generated_x
         X_future[1] -= generated_y
-        print("X_past:", X_past)
-        print("X_future:", X_future)
-
-        # breakpoint()
         past_relative_vectors = X_past - generated_traj
 
-        # future point is the 1m from the person's right side
-        future_pos = X_future[:, -1] - X_future[:, -2]
-        future_pos = torch.tensor(
-            [-(X_future[1, -1] - X_future[1, -2]), X_future[0, -1] - X_future[0, -2]]
+        # calculating the target position
+        # breakpoint()
+        X = -past_relative_vectors[:, -1]
+        present_perp = np.array(
+            [-(X_past[1, -1] - X_past[1, -2]), X_past[0, -1] - X_past[0, -2]]
         )
 
-        # TODO: go back and fix this issue
-        # TODO: test
-        if np.linalg.norm(future_pos) == 0:
-            breakpoint()
-            future_pos = torch.tensor([0.0, 0.0])
-            print("Future pos is 0")
-        else:
-            future_pos /= np.linalg.norm(future_pos)
+        # TODO: need to go back and revisit case where the robot isn't moving
+        if np.linalg.norm(present_perp) > epsilon:
+            present_perp /= np.linalg.norm(present_perp)
 
-        # future_vector = (np.add(X_future[:, -1], future_pos)) - np.array(
-        #     generated_traj
-        # )[:, -1]
+        future_perp = np.array(
+            [
+                -(X_future[1, -1] - X_future[1, -2]),
+                X_future[0, -1] - X_future[0, -2],
+            ]
+        )
 
+        if np.linalg.norm(future_perp) > epsilon:
+            future_perp /= np.linalg.norm(future_perp)
+
+        t = X @ present_perp
+        offset = t * future_perp
+        if np.linalg.norm(offset) > epsilon:
+            offset /= np.linalg.norm(offset) * RADIUS
+        # breakpoint()
+        future_pos = X_future[:, -1] + offset
+
+        # Graphing to make sure that everything makes sense
         plt.scatter(
             X_past[0],
             X_past[1],
@@ -134,16 +140,24 @@ class GeneratedTrajectoryDataset(Dataset):
             past_relative_vectors[1],
             label="Past Relative Vectors",
         )
+        plt.quiver(
+            [X_past[0, -1], X_past[0, -1], X_future[0, -1]],
+            [X_past[1, -1], X_past[1, -1], X_future[1, -1]],
+            [X[0] / np.linalg.norm(X), present_perp[0], future_perp[0]],
+            [X[1] / np.linalg.norm(X), present_perp[1], future_perp[1]],
+            color="gray",
+            label="Debugging Vectors",
+        )
         plt.scatter(
-            X_future[0, -1] + future_pos[0],
-            X_future[1, -1] + future_pos[1],
+            future_pos[0],
+            future_pos[1],
             color="red",
             label="Future Position",
         )
         plt.legend()
         plt.show()
 
-        return past_relative_vectors, future_pos
+        return past_relative_vectors, future_pos, X_past, X_future, generated_traj
         # return past_relative_vectors, future_vector
 
 

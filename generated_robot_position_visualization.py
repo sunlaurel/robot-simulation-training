@@ -9,28 +9,39 @@ from train_helper import T_test
 # TODO: need to adjust data.py to also return the past and future positions
 
 
-def plot_predicted_trajectory(x_past, x_future, x_target, x_predicted):
+def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):
     """Graphs the predicted trajectory compared to the actual trajectory"""
-    breakpoint()
+    # breakpoint()
     x_past_coords = x_past[0].numpy()
     y_past_coords = x_past[1].numpy()
     x_future_coords = x_future[0].numpy()
     y_future_coords = x_future[1].numpy()
+    x_robot_traj_coords = x_robot[0].numpy()
+    y_robot_traj_coords = x_robot[1].numpy()
     x_target_coord = x_target[0]
     y_target_coord = x_target[1]
     x_predicted_coord = x_predicted[0]
     y_predicted_coord = x_predicted[1]
 
     plt.scatter(x_past_coords, y_past_coords, marker="o", color="r")
-    plt.scatter(x_future_coords, y_future_coords, marker="o", color="p")
+    plt.scatter(x_future_coords, y_future_coords, marker="o", color="purple")
+    plt.plot(
+        x_robot_traj_coords,
+        y_robot_traj_coords,
+        marker="o",
+        linestyle="-",
+        color="orange",
+    )
     plt.scatter(x_target_coord, y_target_coord, marker="o", color="b")
     plt.scatter(x_predicted_coord, y_predicted_coord, marker="o", color="g")
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("Positions")
+    plt.title("Trajectories")
     plt.legend(
         [
-            "Past trajectory",
+            "Past Trajectory",
+            "Future Trajectory",
+            "Generated Robot Trajectory",
             "Target Future Robot Position",
             "Predicted Future Robot Position",
         ]
@@ -68,19 +79,21 @@ if __name__ == "__main__":
 
     data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
 
-    for x_past, x_future in data_loader:
-        x_past, x_future = T_test(
-            x_past, x_future, offset=offset_flag, scale=scale_flag
+    for relative_past, target_pos, X_past, X_future, X_robot in data_loader:
+        relative_past, target_pos = T_test(
+            relative_past, target_pos, offset=offset_flag, scale=scale_flag
         )
 
         # Plot the trajectory
         with torch.no_grad():
-            predicted = network(x_past.float()).squeeze()
+            predicted = network(relative_past.float()).squeeze()
 
         plot_predicted_trajectory(
-            x_past=x_past[0],
-            x_future=x_future[0],
-            x_predicted=predicted[0:2],
+            x_past=X_past[0],
+            x_future=X_future[0],
+            x_robot=X_robot[0],
+            x_predicted=predicted,
+            x_target=target_pos[0],
         )
 
         # break  # Only plot the first batch to avoid unnecessary looping
