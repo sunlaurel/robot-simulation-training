@@ -3,8 +3,9 @@
     "past-steps": 10,
     "offset": false,
     "rotate": false,
-    "add-noise": true,
+    "add-noise": false,
     "scale": false,
+    "scale-factor": 0.5,
     "num-features": 2
 }
 

@@ -1,12 +1,13 @@
 import pygame
 import math
+import re
 from utils import *
 from simulation_helper import *
 
 
 MAX_W = 3  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
-RADIUS = 1.5  # if human is stopped, robot stay 1m away from human
+RADIUS = 1.25  # if human is stopped, robot stay 1m away from human
 MOVE_RADIUS = 1.25
 
 global v_last
@@ -35,51 +36,107 @@ class Robot:
         self.v = np.array([0.1, 0.1])  # initial linear velocity
         self.w = 0  # initial angular velocity
 
+        """ Importing constants from config file """
+        with open("./utils/config.json", "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        self.N_future = data["future-steps"]
+        self.N_past = data["past-steps"]
+
+        # initializing the model
+        save_path = "./best-weights-robot/best_weight.pth"
+
+        # setting offset + scale flag
+        self.offset = "offset" in save_path
+        self.scale = "scale" in save_path
+
+        # extracting the number of past steps from the file name
+        match = re.search(r"\((\d+)-past\)", save_path)
+        if match:
+            self.N_past = int(match.group(1))
+
+        self.model = models.MultiLayerRobot(2 * self.N_past, 100, 100, 2)
+        self.model.load_state_dict(torch.load(save_path, weights_only=True))
+
+        self.past_trajectory = np.array(
+            (np.full(self.N_past, x), np.full(self.N_past, y)),
+            dtype=float,  # storing past trajectories
+        )
+
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, target, past_pos):
-        global v_last
-        alpha = 0.2
-        epsilon = 5e-02
+    def policy(self, X_past):
+        # global v_last
+        # alpha = 0.2
+        # epsilon = 5e-02
 
-        agent_pos = np.copy(past_pos[:, -1])
-        self.target_pos = np.copy(target[:, -1])
-        past_target = np.copy(self.target_pos)
+        # agent_pos = np.copy(past_pos[:, -1])
+        # self.target_pos = np.copy(target[:, -1])
+        # past_target = np.copy(self.target_pos)
 
-        X = np.array(self.pos) - agent_pos
+        # X = np.array(self.pos) - agent_pos
+        # # breakpoint()
+
+        # present_tangent = past_pos[:, -1] - past_pos[:, -2]
+        # if np.linalg.norm(present_tangent) <= epsilon:
+        #     present_tangent = v_last
+        #     future_tangent = v_last
+        #     self.target_pos = agent_pos  # want the target position to be the agent position instead of future predicted
+        # else:
+        #     v_last = present_tangent
+        #     future_tangent = target[:, -1] - target[:, -2]
+
+        # present_perp = np.array([-present_tangent[1], present_tangent[0]])
+        # present_perp /= np.linalg.norm(present_perp)
+
+        # future_perp = np.array([-future_tangent[1], future_tangent[0]])
+        # future_perp /= np.linalg.norm(future_perp)
+
+        # # breakpoint()
+        # t = X @ present_perp
+        # offset = t * future_perp
+        # offset /= np.linalg.norm(offset)
+        # offset *= RADIUS
+
+        # self.target_pos += offset
+
+        # if not (present_tangent == v_last).all():
+        #     self.target_pos[0] = (
+        #         alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
+        #     )
+        #     self.target_pos[1] = (
+        #         alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
+        #     )
         # breakpoint()
+        X_past = np.copy(X_past[:, len(X_past[0]) - self.N_past :])
+        X_past = T(
+            X_past - self.past_trajectory,
+            self.pos,
+            offset=self.offset,
+            scale=self.scale,
+            scale_factor=self.model.scale_factor,
+        )
 
-        present_tangent = past_pos[:, -1] - past_pos[:, -2]
-        if np.linalg.norm(present_tangent) <= epsilon:
-            present_tangent = v_last
-            future_tangent = v_last
-            self.target_pos = agent_pos  # want the target position to be the agent position instead of future predicted
-        else:
-            v_last = present_tangent
-            future_tangent = target[:, -1] - target[:, -2]
+        with torch.no_grad():
+            target = self.model(torch.tensor(X_past).float().unsqueeze(0))
+        
+        # the target is relative to the robot's current position
+        self.target = T_inv(
+            target.squeeze(),
+            self.pos,
+            offset=self.offset,
+            scale=self.scale,
+            scale_factor=self.model.scale_factor,
+        )
 
-        present_perp = np.array([-present_tangent[1], present_tangent[0]])
-        present_perp /= np.linalg.norm(present_perp)
-
-        future_perp = np.array([-future_tangent[1], future_tangent[0]])
-        future_perp /= np.linalg.norm(future_perp)
-
-        # breakpoint()
-        t = X @ present_perp
-        offset = t * future_perp
-        offset /= np.linalg.norm(offset)
-        offset *= RADIUS
-
-        self.target_pos += offset
-
-        if not (present_tangent == v_last).all():
-            self.target_pos[0] = alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
-            self.target_pos[1] = alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
+        # putting the target position in absolute coordinates
+        self.target_pos = target.squeeze() + torch.tensor(self.pos)
 
         # calculating the angles and where the robot should move
+        # breakpoint()
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
 
@@ -112,8 +169,15 @@ class Robot:
                 w = angle_diff
         elif distance < MAX_V:
             # if within the stopping range, then moves incrementally closer to the target
-            v = 1.5 * distance * np.array(
-                [math.cos(self.theta + w * self.dt), math.sin(self.theta + w * self.dt)]
+            v = (
+                1.5
+                * distance
+                * np.array(
+                    [
+                        math.cos(self.theta + w * self.dt),
+                        math.sin(self.theta + w * self.dt),
+                    ]
+                )
             )
 
             if np.linalg.norm(v) < 0.5:
@@ -136,6 +200,11 @@ class Robot:
         elif self.theta < 0:
             self.theta = self.theta + 2 * math.pi
         self.pos += v * self.dt
+
+        """ Updating the target position from the new positions """
+        self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
+        self.past_trajectory[0][-1] = self.pos[0]
+        self.past_trajectory[1][-1] = self.pos[1]
 
     # Adding event handlers for arrow keys to adjust robot's velocity and position
     def handle_event(self, event):

@@ -22,6 +22,7 @@ class Agent:
         self.epsilon = epsilon
         self.sigma_max = sigma_max
 
+        """ Importing constants from the config file """
         with open("./utils/config.json", "r", encoding="utf-8") as file:
             data = json.load(file)
 
@@ -99,16 +100,16 @@ class Agent:
                 radius=5,
             )
 
-        for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
-            pygame.draw.circle(
-                surface,
-                (0, 153, 0),
-                (
-                    int(meters_to_pixels(self.future_trajectory[0][i])),
-                    int(meters_to_pixels(self.future_trajectory[1][i])),
-                ),
-                radius=5,
-            )
+        # for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
+        #     pygame.draw.circle(
+        #         surface,
+        #         (0, 153, 0),
+        #         (
+        #             int(meters_to_pixels(self.future_trajectory[0][i])),
+        #             int(meters_to_pixels(self.future_trajectory[1][i])),
+        #         ),
+        #         radius=5,
+        #     )
 
         # for x, y in convert_to_tuple_list(self.future_trajectory):
         #     pygame.draw.circle(

@@ -34,6 +34,8 @@ def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):
     )
     plt.scatter(x_target_coord, y_target_coord, marker="o", color="b")
     plt.scatter(x_predicted_coord, y_predicted_coord, marker="o", color="g")
+    plt.xlim(-5, 5)
+    plt.ylim(-5, 5)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title("Trajectories")
@@ -88,12 +90,16 @@ if __name__ == "__main__":
         with torch.no_grad():
             predicted = network(relative_past.float()).squeeze()
 
+        if scale_flag:
+            target_pos /= 0.5
+            predicted /= 0.5
+
         plot_predicted_trajectory(
             x_past=X_past[0],
             x_future=X_future[0],
             x_robot=X_robot[0],
-            x_predicted=predicted,
             x_target=target_pos[0],
+            x_predicted=predicted,
         )
 
         # break  # Only plot the first batch to avoid unnecessary looping
