@@ -69,7 +69,8 @@ class GeneratedTrajectoryDataset(Dataset):
         # step = (
         #     X_past[0, -1] - X_past[0, 0]
         # ) / self.N_past  # step is evenly spaced by the end and start x coords
-        step = random.uniform(0, (X_past[0, -1] - X_past[0, 0]) / self.N_past * 1.25)
+        # step = random.uniform(0, (X_past[0, -1] - X_past[0, 0]) / self.N_past * 1.25)
+        step = random.uniform(0, abs(X_past[0, -1] - X_past[0, 0]) / self.N_past + 0.25)
         epsilon = 5e-02
 
         # starting points for the generated line
