@@ -104,7 +104,7 @@ class Agent:
         #     pygame.draw.circle(
         #         surface,
         #         (0, 153, 0),
-        #         (
+    #         (
         #             int(meters_to_pixels(self.future_trajectory[0][i])),
         #             int(meters_to_pixels(self.future_trajectory[1][i])),
         #         ),

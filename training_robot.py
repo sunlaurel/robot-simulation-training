@@ -9,7 +9,7 @@ with open(file="./utils/config.json", mode="r") as file:
     data = json.load(file)
 
 # Training parameters
-num_epochs = 50
+num_epochs = 150
 print_interval = 1
 learning_rate = 0.001
 batch_size = 100
@@ -25,7 +25,7 @@ scale = data["scale"]
 
 # Set optimizer (adam) and loss function (mae)
 # breakpoint()
-network = MultiLayerRobot(2 * past_steps, 100, 100, 2)
+network = MultiLayerRobot(4 * past_steps, 100, 100, 2)
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss_function = nn.L1Loss()
 

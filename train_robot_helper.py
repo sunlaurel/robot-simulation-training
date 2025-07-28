@@ -87,9 +87,10 @@ def train(
     avg_loss = 0
     num_batches = 0
 
-    for i, (input_pos, target_pos, _, _, _) in enumerate(data_generator):
-        input_pos, target_pos = T_train(
-            input_pos,
+    # breakpoint()
+    for i, (input_vectors, target_pos, _, _, _) in enumerate(data_generator):
+        input_vectors, target_pos = T_train(
+            input_vectors,
             target_pos,
             offset=offset,
             scale=scale,
@@ -98,7 +99,7 @@ def train(
         )
 
         optimizer.zero_grad()  # Gradients need to be reset each batch
-        prediction = network(input_pos.float())
+        prediction = network(input_vectors.float())
         loss = loss_function(prediction, target_pos.float())
         loss.backward()  # Backward pass: compute the gradients of the model with respect to the loss
         optimizer.step()

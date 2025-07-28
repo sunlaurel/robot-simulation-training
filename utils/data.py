@@ -33,19 +33,17 @@ class GeneratedTrajectoryDataset(Dataset):
         self.N_future = N_future
         self.person_ids = csv_data["id"].unique()
         self.position_data = {}  # mapping from id to trajectory
-        # self.velocity_data = {}  # mapping from id to trajectory
+        self.velocity_data = {}  # mapping from id to trajectory
         self.len = len(csv_data)
-
         self.person_ids = split_ids
-        self.position_data = {}  # mapping from id to trajectory
-        # self.velocity_data = {} # mapping from id to trajectory
+
         for person_id in tqdm(
             self.person_ids, total=len(self.person_ids), dynamic_ncols=True
         ):
             trajdata = csv_data[csv_data["id"] == person_id].sort_values(by="time")
             if len(trajdata) <= self.N_past + self.N_future:
                 continue
-            self.position_data[person_id] = trajdata[["x", "y"]].to_numpy().T  # 2 x N
+            self.position_data[person_id] = trajdata[["x", "y"]].to_numpy().T  # 4 x N
 
         self.person_ids = list(
             self.position_data.keys()
@@ -56,6 +54,18 @@ class GeneratedTrajectoryDataset(Dataset):
         return self.len
 
     def __getitem__(self, idx):
+        initial_offset = random.uniform(
+            -0.5, 0.5
+        )  # changing the robot's starting position
+
+        epsilon = 5e-02
+
+        # 0. X -- Undo my changes so the robot goes back to going at different velocities at different times
+        # 1. Include the velocity at each step into the network input (so the robot can know what velocity its going)
+        # 2. Retrain the network and let us know the new test error and behavior
+        # 3. Visualize 10-20 training examples along with the prediction so we can all see together what kinds of inputs
+        #    the network is getting correct and what kinds its getting wrong
+
         # TODO: play with the initial x and y offsets and x and y velocities of the robot
         random_person_id = int(random.choice(self.person_ids))
         X = self.position_data[random_person_id]
@@ -67,48 +77,52 @@ class GeneratedTrajectoryDataset(Dataset):
 
         present_tangent = X_past[:, -1] - X_past[:, -2]
 
-        # making sure that the robot path generated is in the same direction as the person
+        #########  Constraining velocities to be same direction as person  ##########
         x_vel = random.uniform(
             0, 3 * 0.12
         )  # max speed would be 3 m/s * 0.12 s/frame = 0.36 m/frame
         x_vel = -x_vel if present_tangent[0] * x_vel < 0 else x_vel
-        y_vel = random.uniform(0, math.sqrt((3 * 0.12) ** 2 - x_vel**2))
+        y_vel = random.uniform(
+            0, math.sqrt((3 * 0.12) ** 2 - x_vel**2)
+        )  # constraining the y velocity so that the speed of the robot is max 3 m/s
         y_vel = -y_vel if present_tangent[1] * y_vel < 0 else y_vel
-        mag = math.sqrt(x_vel **2 + y_vel**2)/0.12
-        x_vel /= mag
-        y_vel /= mag
+        # mag = math.sqrt(x_vel **2 + y_vel**2)/0.12
+        # x_vel /= mag
+        # y_vel /= mag
 
-        initial_offset = random.uniform(
-            -0.5, 0.5
-        )  # changing the robot's starting position
+        ##########  Generating the path for the robot ########
+        starting_pos = (
+            X_past[:, 0] + initial_offset
+        )  # starting points for the generated line
 
-        epsilon = 5e-02
+        generated_traj_x = np.linspace(
+            starting_pos[0], starting_pos[0] + (self.N_past - 1) * x_vel, self.N_past
+        )
 
-        # starting points for the generated line
-        generated_x = X_past[0, 0] + initial_offset
-        generated_y = X_past[1, 0] + initial_offset
-        generated_traj = [[generated_x], [generated_y]]
+        generated_traj_y = np.linspace(
+            starting_pos[1], starting_pos[1] + (self.N_past - 1) * y_vel, self.N_past
+        )
 
-        # TODO: make this more efficient & try doing it without a for loop
-        for j in range(self.N_past - 1):
-            generated_traj[0].append(generated_x + x_vel)
-            generated_traj[1].append(generated_y + y_vel)
-            generated_x += x_vel
-            generated_y += y_vel
+        generated_traj = np.array([generated_traj_x, generated_traj_y])
 
-        generated_traj = np.array(generated_traj)
-
-        # shifting it to the robot's coordinate frame
+        #########  Shifting it to the robot's coordinate frame  ##########
+        curr_pos = generated_traj[:, -1].copy()
         generated_traj[0] -= generated_traj[0, -1]
         generated_traj[1] -= generated_traj[1, -1]
 
-        X_past[0] -= generated_x
-        X_past[1] -= generated_y
-        X_future[0] -= generated_x
-        X_future[1] -= generated_y
+        X_past[0] -= curr_pos[0]
+        X_past[1] -= curr_pos[1]
+        X_future[0] -= curr_pos[0]
+        X_future[1] -= curr_pos[1]
         past_relative_vectors = X_past - generated_traj
 
-        # calculating the target position
+        # getting the velocity at each step
+        # breakpoint()
+        X_vel = generated_traj[:, 1:] - generated_traj[:, :-1]
+        X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
+        input_vectors = np.vstack((past_relative_vectors, X_vel))
+
+        ##########  Calculating the target position  ##########
         X = -past_relative_vectors[:, -1]
         present_perp = np.array(
             [X_past[1, -1] - X_past[1, -2], -(X_past[0, -1] - X_past[0, -2])]
@@ -130,9 +144,9 @@ class GeneratedTrajectoryDataset(Dataset):
             offset = t * future_perp
             offset = offset / np.linalg.norm(offset) * RADIUS
             offset = future_perp  # trying just using the future position as the orthogonal vector of the 2 future positions
-            future_pos = X_future[:, -1] + offset
+            future_pos = X_future[:2, -1] + offset
 
-        # # Graphing to make sure that everything makes sense
+        ###########  Graphing generated trajectory ###########
         # plt.figure(figsize=(12, 12))
         # plt.xlim(-5, 5)
         # plt.ylim(-5, 5)
@@ -147,7 +161,6 @@ class GeneratedTrajectoryDataset(Dataset):
         # )
 
         # for i in range(len(past_relative_vectors[0])):
-        #     # breakpoint()
         #     plt.plot(
         #         [X_past[0][i], X_past[0][i] - past_relative_vectors[0][i]],
         #         [X_past[1][i], X_past[1][i] - past_relative_vectors[1][i]],
@@ -171,12 +184,15 @@ class GeneratedTrajectoryDataset(Dataset):
         # plt.title("Trajectories")
         # plt.xlabel("x")
         # plt.ylabel("y")
-        # # plt.xlim(-10, 10)
-        # # plt.ylim(-10, 10)
         # plt.show()
 
-        return past_relative_vectors, future_pos, X_past, X_future, generated_traj
-        # return past_relative_vectors, future_vector
+        return (
+            input_vectors,
+            future_pos,
+            X_past,
+            X_future,
+            generated_traj,
+        )
 
 
 def GenTrainTestDatasets(csv_path, past_steps, future_steps):

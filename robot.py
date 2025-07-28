@@ -55,7 +55,7 @@ class Robot:
         if match:
             self.N_past = int(match.group(1))
 
-        self.model = models.MultiLayerRobot(2 * self.N_past, 100, 100, 2)
+        self.model = models.MultiLayerRobot(4 * self.N_past, 100, 100, 2)
         self.model.load_state_dict(torch.load(save_path, weights_only=True))
 
         self.past_trajectory = np.array(
@@ -73,45 +73,16 @@ class Robot:
         # alpha = 0.2
         # epsilon = 5e-02
 
-        # agent_pos = np.copy(past_pos[:, -1])
-        # self.target_pos = np.copy(target[:, -1])
-        # past_target = np.copy(self.target_pos)
-
-        # X = np.array(self.pos) - agent_pos
-        # # breakpoint()
-
-        # present_tangent = past_pos[:, -1] - past_pos[:, -2]
-        # if np.linalg.norm(present_tangent) <= epsilon:
-        #     present_tangent = v_last
-        #     future_tangent = v_last
-        #     self.target_pos = agent_pos  # want the target position to be the agent position instead of future predicted
-        # else:
-        #     v_last = present_tangent
-        #     future_tangent = target[:, -1] - target[:, -2]
-
-        # present_perp = np.array([-present_tangent[1], present_tangent[0]])
-        # present_perp /= np.linalg.norm(present_perp)
-
-        # future_perp = np.array([-future_tangent[1], future_tangent[0]])
-        # future_perp /= np.linalg.norm(future_perp)
-
-        # # breakpoint()
-        # t = X @ present_perp
-        # offset = t * future_perp
-        # offset /= np.linalg.norm(offset)
-        # offset *= RADIUS
-
-        # self.target_pos += offset
-
-        # if not (present_tangent == v_last).all():
-        #     self.target_pos[0] = (
-        #         alpha * self.target_pos[0] + (1 - alpha) * past_target[0]
-        #     )
-        #     self.target_pos[1] = (
-        #         alpha * self.target_pos[1] + (1 - alpha) * past_target[1]
-        #     )
         # breakpoint()
-        X_past = np.copy(X_past[:, len(X_past[0]) - self.N_past :])
+
+        X_past = np.copy(
+            X_past[:, len(X_past[0]) - self.N_past :]
+        )  # X_past is the same as past relative vectors
+        X_vel = self.past_trajectory[:, 1:] - self.past_trajectory[:, :-1]
+        X_vel = np.column_stack(
+            (X_vel, X_vel[:, -1])
+        )  # for the last step, setting the last velocity as the same as the one before
+
         X_past = T(
             X_past - self.past_trajectory,
             self.pos,
@@ -120,9 +91,12 @@ class Robot:
             scale_factor=self.model.scale_factor,
         )
 
+        ###########  Calculating the target position from the model #############
+        input_vectors = np.vstack((X_past, X_vel))
+
         with torch.no_grad():
-            target = self.model(torch.tensor(X_past).float().unsqueeze(0))
-        
+            target = self.model(torch.tensor(input_vectors).float().unsqueeze(0))
+
         # the target is relative to the robot's current position
         self.target = T_inv(
             target.squeeze(),

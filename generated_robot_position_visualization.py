@@ -5,9 +5,6 @@ import json
 import matplotlib.pyplot as plt
 from train_helper import T_test
 
-# TODO: need to plot and include the future and past positions to graph
-# TODO: need to adjust data.py to also return the past and future positions
-
 
 def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):
     """Graphs the predicted trajectory compared to the actual trajectory"""
@@ -65,7 +62,7 @@ if __name__ == "__main__":
     future_steps = data["future-steps"]
 
     network = utils.models.MultiLayerRobot(
-        input_size=2 * past_steps,
+        input_size=4 * past_steps,
         hidden_layer1=100,
         hidden_layer2=100,
         output_size=2,
@@ -75,11 +72,11 @@ if __name__ == "__main__":
     print("Model visualized:", save_path)
     network.load_state_dict(torch.load(save_path, weights_only=True))
 
-    _, testing_data = utils.data.GenTrainTestGeneratedDatasets(
+    training_data, testing_data = utils.data.GenTrainTestGeneratedDatasets(
         "./training-data/crowd_data.csv", past_steps, future_steps
     )
 
-    data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)
+    data_loader = DataLoader(training_data, batch_size=1, shuffle=True)
 
     for relative_past, target_pos, X_past, X_future, X_robot in data_loader:
         relative_past, target_pos = T_test(
