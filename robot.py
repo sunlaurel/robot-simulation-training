@@ -5,15 +5,17 @@ from utils import *
 from simulation_helper import *
 
 
+###########  Initializing constants and global variables  ###########
 MAX_W = 3  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.25  # if human is stopped, robot stay 1m away from human
 MOVE_RADIUS = 1.25
 
-global v_last
+global v_last  # last significant velocity
 v_last = np.array([1.0, 0.0])
 
 
+##############  Creating the Robot class  #################
 class Robot:
 
     def __init__(
@@ -37,8 +39,8 @@ class Robot:
         self.w = 0  # initial angular velocity
 
         """ Importing constants from config file """
-        with open("./utils/config.json", "r", encoding="utf-8") as file:
-            data = json.load(file)
+        with open("./utils/config.json", "r", encoding="utf-8") as config:
+            data = json.load(config)
 
         self.N_future = data["future-steps"]
         self.N_past = data["past-steps"]
@@ -73,8 +75,6 @@ class Robot:
         # alpha = 0.2
         # epsilon = 5e-02
 
-        # breakpoint()
-
         X_past = np.copy(
             X_past[:, len(X_past[0]) - self.N_past :]
         )  # X_past is the same as past relative vectors
@@ -92,7 +92,7 @@ class Robot:
             scale_factor=self.model.scale_factor,
         )
 
-        ###########  Calculating the target position from the model #############
+        ##############  Calculating the target position from the model #############
         input_vectors = np.vstack((X_past, X_vel))
 
         with torch.no_grad():
@@ -234,7 +234,6 @@ class Robot:
         )
 
         # Draws the robot's target on the screen as a dark green circle
-        # drawing the target on the agent for now
         pygame.draw.circle(
             surface,
             (5, 59, 14),
