@@ -2,13 +2,14 @@ import pygame
 import sys
 import math
 import pandas as pd
+import numpy as np
 from agent import Agent
 from robot import Robot, RADIUS, MOVE_RADIUS
 from utils import *
 from simulation_helper import *
 
 """ Constants """
-WIDTH, HEIGHT = 10, 8
+WIDTH, HEIGHT = 15, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
 # SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
@@ -56,14 +57,14 @@ if __name__ == "__main__":
         if current_time - last_sample_time >= SAMPLING_INTERVAL_MS:
             agent.update(agent.pos[0], agent.pos[1])
             u_next = robot.policy(
-                agent.past_trajectory,
+                np.copy(agent.past_trajectory),
             )  # passing in the last two positions of predicted trajectory
             csv_data.append(
                 {
                     "id": id,
-                    "agent_past_pos": agent.past_trajectory,
-                    "robot_past_pos": robot.past_trajectory,
-                    "predicted_target_pos": robot.target_pos,
+                    "agent_past_pos": agent.past_trajectory.tolist(),
+                    "robot_past_pos": robot.past_trajectory.tolist(),
+                    "predicted_target_pos": robot.target_pos.tolist(),
                 }
             )  # adding to the csv file
             id += 1
@@ -91,6 +92,6 @@ if __name__ == "__main__":
         clock.tick(FPS)
 
     df = pd.DataFrame(csv_data)
-    df.to_csv('./simulation-data/sim1.csv', index=False)
+    df.to_csv("./simulation-data/sim1.csv", index=False)
     pygame.quit()
     sys.exit()

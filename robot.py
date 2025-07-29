@@ -71,29 +71,38 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, X_past):
-        # global v_last
+        global v_last, target_pos
         # alpha = 0.2
-        # epsilon = 5e-02
+        epsilon = 5e-02
 
-        X_past = np.copy(
-            X_past[:, len(X_past[0]) - self.N_past :]
-        )  # X_past is the same as past relative vectors
-        X_vel = self.past_trajectory[:, 1:] - self.past_trajectory[:, :-1]
-        # X_vel = np.column_stack(
-        #     (X_vel, X_vel[:, -1].copy())
-        # )  # for the last step, setting the last velocity as the same as the one before
-        X_vel = np.insert(X_vel, 0, np.copy(X_vel[:, 0]), axis=1)
+        # past_relative_vectors = np.copy(
+        #     X_past[:, len(X_past[0]) - self.N_past :]
+        # )  # X_past are the past relative vectors
+        # X_vel = self.past_trajectory[:, 1:] - self.past_trajectory[:, :-1]
+        # # X_vel = np.column_stack(
+        # #     (X_vel, X_vel[:, -1].copy())
+        # # )  # for the last step, setting the last velocity as the same as the one before
+        # X_vel = np.insert(X_vel, 0, np.copy(X_vel[:, 0]), axis=1)
 
-        X_past = T(
-            X_past - self.past_trajectory,
+        # past_relative_vectors = T(
+        #     past_relative_vectors - self.past_trajectory,
+        #     self.pos,
+        #     offset=self.offset,
+        #     scale=self.scale,
+        #     scale_factor=self.model.scale_factor,
+        # )
+
+        ##############  Calculating the target position from the model #############
+        # breakpoint()
+        input_vectors = ProcessPast(X_past, self.past_trajectory)
+
+        input_vectors[:2] = T(
+            input_vectors[:2],
             self.pos,
             offset=self.offset,
             scale=self.scale,
             scale_factor=self.model.scale_factor,
         )
-
-        ##############  Calculating the target position from the model #############
-        input_vectors = np.vstack((X_past, X_vel))
 
         with torch.no_grad():
             target = self.model(torch.tensor(input_vectors).float().unsqueeze(0))
@@ -111,6 +120,37 @@ class Robot:
         # self.target_pos = target.squeeze() + torch.tensor(self.pos)
         self.target_pos = target.squeeze() + torch.tensor(X_past[:, -1])
 
+        # #############  Sanity Check  ###########
+        # # breakpoint()
+        # X = self.past_trajectory[:, -1] - X_past[:, -1]
+        # agent_pos = np.copy(X_past[:, -1])
+        # present_tangent = X_past[:, -1] - X_past[:, -2]
+        # if np.linalg.norm(present_tangent) <= epsilon:
+        #     present_tangent = v_last
+        #     future_tangent = v_last
+        #     target_pos = agent_pos  # want the target position to be the agent position instead of future predicted
+        # else:
+        #     v_last = present_tangent
+        #     future_tangent = X_future[:, -1] - X_future[:, -2]
+
+        # present_perp = np.array([-present_tangent[1], present_tangent[0]])
+        # present_perp /= np.linalg.norm(present_perp)
+
+        # future_perp = np.array([-future_tangent[1], future_tangent[0]])
+        # future_perp /= np.linalg.norm(future_perp)
+
+        # # breakpoint()
+        # t = X @ present_perp
+        # offset = t * future_perp
+        # offset /= np.linalg.norm(offset)
+        # print("offset:", offset)
+        # offset *= RADIUS
+
+        # print("target pos", target_pos)
+        # target_pos += offset
+        # print("target pos:", target_pos)
+
+        #############  Robot Behavior  ################
         # calculating the angles and where the robot should move
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
@@ -201,6 +241,8 @@ class Robot:
 
     def draw(self, surface):
         # Draws the robot on the screen as a gray rectangle
+        global target_pos  # sanity check
+
         dx = self.height / 2
         dy = self.width / 2
         nose_dx = self.width * 0.3 / 2

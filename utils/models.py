@@ -29,7 +29,7 @@ class MultiLayer(nn.Module):
         batch_size = x.size(0)  # Store the batch size before flattening
         x = x.view(batch_size, -1)  # Flatten the input x
         x = F.relu(self.linear1(x))  # Linear transform, then relu
-        x = F.relu(self.linear2(x))
+        # x = F.relu(self.linear2(x))
         out = self.linear3(x)
         out = out.view(
             batch_size, features, -1

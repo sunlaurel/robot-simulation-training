@@ -4,6 +4,7 @@ import pygame
 from utils import *
 from simulation_helper import *
 
+
 class Agent:
 
     def __init__(
@@ -30,9 +31,7 @@ class Agent:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        save_path = (
-            "./best-weights/best_weight_noise_rotate_offset(20-past)(0.1-sigma).pth"
-        )
+        save_path = "./best-weights/best_weight_offset.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
@@ -104,7 +103,7 @@ class Agent:
         #     pygame.draw.circle(
         #         surface,
         #         (0, 153, 0),
-    #         (
+        #         (
         #             int(meters_to_pixels(self.future_trajectory[0][i])),
         #             int(meters_to_pixels(self.future_trajectory[1][i])),
         #         ),
@@ -146,7 +145,9 @@ class Agent:
             scale=self.scale,
             scale_factor=self.model.scale_factor,
         )
+        # print("past predicted:", X_ego_past)
         X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
+        # print("future predicted:", X_ego_future)
         self.future_trajectory = T_inv(
             X_ego_future.squeeze(),
             self.pos,

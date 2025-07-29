@@ -13,6 +13,15 @@ from sklearn.model_selection import train_test_split
 RADIUS = 0.75
 
 
+def ProcessPast(X_past, R_past):
+    past_relative_vectors = X_past - R_past
+    X_vel = R_past[:, 1:] - R_past[:, :-1]
+    X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
+    input_vectors = np.vstack((past_relative_vectors, X_vel))
+
+    return input_vectors
+
+
 def GenTrainTestGeneratedDatasets(csv_path, past_steps, future_steps):
     csv_data = pd.read_csv(csv_path)
     person_ids = csv_data["id"].unique()
@@ -55,75 +64,72 @@ class GeneratedTrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         initial_offset = random.uniform(
-            -0.5, 0.5
+            -2, 2
         )  # changing the robot's starting position
 
         epsilon = 5e-02
 
-        # 0. X -- Undo my changes so the robot goes back to going at different velocities at different times
-        # 1. Include the velocity at each step into the network input (so the robot can know what velocity its going)
-        # 2. Retrain the network and let us know the new test error and behavior
-        # 3. Visualize 10-20 training examples along with the prediction so we can all see together what kinds of inputs
-        #    the network is getting correct and what kinds its getting wrong
-
         # TODO: play with the initial x and y offsets and x and y velocities of the robot
         random_person_id = int(random.choice(self.person_ids))
-        X = self.position_data[random_person_id]
-        random_frame = int(random.randint(self.N_past, X.shape[1] - 1 - self.N_future))
+        data = self.position_data[random_person_id]
+        random_frame = int(
+            random.randint(self.N_past, data.shape[1] - 1 - self.N_future)
+        )
 
         # Determine the indices for past and future points
-        X_past = X[:, random_frame - self.N_past + 1 : random_frame + 1].copy()
-        X_future = X[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
+        X_past = data[:, random_frame - self.N_past + 1 : random_frame + 1].copy()
+        X_future = data[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
-        present_tangent = X_past[:, -1] - X_past[:, -2]
+        # present_tangent = X_past[:, -1] - X_past[:, -2]
 
         #########  Constraining velocities to be same direction as person  ##########
-        x_vel = random.uniform(
-            0, 3 * 0.12
-        )  # max speed would be 3 m/s * 0.12 s/frame = 0.36 m/frame
-        x_vel = -x_vel if present_tangent[0] * x_vel < 0 else x_vel
-        y_vel = random.uniform(
-            0, math.sqrt((3 * 0.12) ** 2 - x_vel**2)
-        )  # constraining the y velocity so that the speed of the robot is max 3 m/s
-        y_vel = -y_vel if present_tangent[1] * y_vel < 0 else y_vel
-        # mag = math.sqrt(x_vel **2 + y_vel**2)/0.12
-        # x_vel /= mag
-        # y_vel /= mag
+        # breakpoint()
+        v = np.random.uniform(-1, 1, size=2)
+        v /= np.linalg.norm(v)
+        s = random.uniform(0, 2)
+        v *= s
 
-        ##########  Generating the path for the robot ########
+        ##########  Generating the path for the robot  ########
         starting_pos = (
             X_past[:, 0] + initial_offset
         )  # starting points for the generated line
 
         generated_traj_x = np.linspace(
-            starting_pos[0], starting_pos[0] + (self.N_past - 1) * x_vel, self.N_past
+            starting_pos[0],
+            starting_pos[0] + (self.N_past - 1) * v[0] * 0.12,
+            self.N_past,
         )
 
         generated_traj_y = np.linspace(
-            starting_pos[1], starting_pos[1] + (self.N_past - 1) * y_vel, self.N_past
+            starting_pos[1],
+            starting_pos[1] + (self.N_past - 1) * v[1] * 0.12,
+            self.N_past,
         )
 
         generated_traj = np.array([generated_traj_x, generated_traj_y])
 
-        #########  Shifting it to the robot's coordinate frame  ##########
-        curr_pos = generated_traj[:, -1].copy()
-        generated_traj[0] -= generated_traj[0, -1]
-        generated_traj[1] -= generated_traj[1, -1]
+        # Call ProcessPast
+        input_vectors = ProcessPast(X_past, generated_traj)
 
-        X_past[0] -= curr_pos[0]
-        X_past[1] -= curr_pos[1]
-        X_future[0] -= curr_pos[0]
-        X_future[1] -= curr_pos[1]
-        past_relative_vectors = X_past - generated_traj
+        # #########  Shifting it to the robot's coordinate frame  ##########
+        # curr_pos = generated_traj[:, -1].copy()
+        # generated_traj[0] -= generated_traj[0, -1]
+        # generated_traj[1] -= generated_traj[1, -1]
 
-        # getting the velocity at each step
-        # breakpoint()
-        X_vel = generated_traj[:, 1:] - generated_traj[:, :-1]
-        X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
-        input_vectors = np.vstack((past_relative_vectors, X_vel))
+        # X_past[0] -= curr_pos[0]
+        # X_past[1] -= curr_pos[1]
+        # X_future[0] -= curr_pos[0]
+        # X_future[1] -= curr_pos[1]
+        # past_relative_vectors = X_past - generated_traj
+
+        # # getting the velocity at each step
+        # # breakpoint()
+        # X_vel = generated_traj[:, 1:] - generated_traj[:, :-1]
+        # X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
+        # input_vectors = np.vstack((past_relative_vectors, X_vel))
 
         ##########  Calculating the target position  ##########
-        X = -past_relative_vectors[:, -1]
+        X = -1 * np.copy(input_vectors[:2, -1])
         present_perp = np.array(
             [X_past[1, -1] - X_past[1, -2], -(X_past[0, -1] - X_past[0, -2])]
         )
@@ -144,35 +150,40 @@ class GeneratedTrajectoryDataset(Dataset):
             offset = t * future_perp
             offset = offset / np.linalg.norm(offset) * RADIUS
             offset = future_perp  # trying just using the future position as the orthogonal vector of the 2 future positions
-            future_pos = X_future[:2, -1] + offset
+            future_pos = X_future[:2, -1] + offset - generated_traj[:, -1]
 
-        ###########  Graphing generated trajectory ###########
+        # ##########  Graphing generated trajectory ###########
         # plt.figure(figsize=(12, 12))
         # plt.xlim(-5, 5)
         # plt.ylim(-5, 5)
         # plt.scatter(
-        #     X_past[0],
-        #     X_past[1],
+        #     X_past[0] - generated_traj[0, -1],
+        #     X_past[1] - generated_traj[1, -1],
         #     label="Original Past Trajectory",
         # )
-        # plt.scatter(X_future[0], X_future[1], label="Future Trajectory")
         # plt.scatter(
-        #     generated_traj[0], generated_traj[1], label="Generated Robot Trajectory"
+        #     X_future[0] - generated_traj[0, -1],
+        #     X_future[1] - generated_traj[1, -1],
+        #     label="Future Trajectory",
+        # )
+        # plt.scatter(
+        #     generated_traj[0] - generated_traj[0, -1],
+        #     generated_traj[1] - generated_traj[1, -1],
+        #     label="Generated Robot Trajectory",
         # )
 
-        # for i in range(len(past_relative_vectors[0])):
+        # # breakpoint()
+        # for i in range(len(input_vectors[0])):
         #     plt.plot(
-        #         [X_past[0][i], X_past[0][i] - past_relative_vectors[0][i]],
-        #         [X_past[1][i], X_past[1][i] - past_relative_vectors[1][i]],
+        #         [
+        #             X_past[0][i] - generated_traj[0][-1],
+        #             X_past[0][i] - input_vectors[0][i] - generated_traj[0][-1],
+        #         ],
+        #         [
+        #             X_past[1][i] - generated_traj[1][-1],
+        #             X_past[1][i] - input_vectors[1][i] - generated_traj[1][-1],
+        #         ],
         #     )
-
-        # # plt.quiver(
-        # #     generated_traj[0],
-        # #     generated_traj[1],
-        # #     past_relative_vectors[0],
-        # #     past_relative_vectors[1],
-        # #     label="Past Relative Vectors",
-        # # )
 
         # plt.scatter(
         #     future_pos[0],
