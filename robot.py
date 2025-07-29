@@ -79,9 +79,10 @@ class Robot:
             X_past[:, len(X_past[0]) - self.N_past :]
         )  # X_past is the same as past relative vectors
         X_vel = self.past_trajectory[:, 1:] - self.past_trajectory[:, :-1]
-        X_vel = np.column_stack(
-            (X_vel, X_vel[:, -1])
-        )  # for the last step, setting the last velocity as the same as the one before
+        # X_vel = np.column_stack(
+        #     (X_vel, X_vel[:, -1].copy())
+        # )  # for the last step, setting the last velocity as the same as the one before
+        X_vel = np.insert(X_vel, 0, np.copy(X_vel[:, 0]), axis=1)
 
         X_past = T(
             X_past - self.past_trajectory,
@@ -107,10 +108,10 @@ class Robot:
         )
 
         # putting the target position in absolute coordinates
-        self.target_pos = target.squeeze() + torch.tensor(self.pos)
+        # self.target_pos = target.squeeze() + torch.tensor(self.pos)
+        self.target_pos = target.squeeze() + torch.tensor(X_past[:, -1])
 
         # calculating the angles and where the robot should move
-        # breakpoint()
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
 
