@@ -37,27 +37,44 @@ while True:
 
     # breakpoint()
     new_predicted = new_predicted.squeeze()
-    plt.figure(figsize=(12, 12))
-    plt.scatter(agent_pos[0, len(agent_pos[0]) - 10:], agent_pos[1, len(agent_pos[0]) - 10:], label="Agent")
-    plt.scatter(robot_pos[0], robot_pos[1], label="Robot")
-    plt.scatter(target_pos[0], target_pos[1], label="Predicted Target")
-    plt.scatter(
-        new_predicted[0] + agent_pos[0, -1],
-        new_predicted[1] + agent_pos[1, -1],
-        label="New Predicted",
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.scatter(
+        agent_pos[0, len(agent_pos[0]) - 10 :],
+        agent_pos[1, len(agent_pos[0]) - 10 :],
+        label="Agent",
     )
-    # plt.quiver(
-    #     [agent_pos[0, -1], robot_pos[0, -1]],
-    #     [agent_pos[1, -1], robot_pos[1, -1]],
-    #     [agent_pos[0, -1] - agent_pos[0, -2], robot_pos[0, -1] - robot_pos[0, -2]],
-    #     [agent_pos[1, -1] - agent_pos[1, -2], robot_pos[1, -1] - robot_pos[1, -2]],
+    ax.scatter(robot_pos[0], robot_pos[1], label="Robot")
+    ax.scatter(target_pos[0], target_pos[1], label="Predicted Target")
+    # ax.scatter(
+    #     new_predicted[0] + agent_pos[0, -1],
+    #     new_predicted[1] + agent_pos[1, -1],
+    #     label="New Predicted",
     # )
+    for i in range(1, len(robot_pos[0])):
+        ax.arrow(
+            robot_pos[0, i - 1],
+            robot_pos[1, i - 1],
+            robot_pos[0, i] - robot_pos[0, i - 1],
+            robot_pos[1, i] - robot_pos[1, i - 1],
+            color="black",
+            width=0.003,
+            head_width=6 * 0.003,
+        )
+        ax.arrow(
+            agent_pos[0, i - 1],
+            agent_pos[1, i - 1],
+            agent_pos[0, i] - agent_pos[0, i - 1],
+            agent_pos[1, i] - agent_pos[1, i - 1],
+            color="black",
+            width=0.003,
+            head_width=6 * 0.003,
+        )
 
+    plt.gca().set_aspect("equal")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.legend()
     plt.title("Simulation Visualization")
-    print("predicted == new predicted:", new_predicted + agent_pos[:, -1] == target_pos)
     # plt.xlim(0, 10)
     # plt.ylim(0, 8)
 

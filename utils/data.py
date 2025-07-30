@@ -22,6 +22,7 @@ def ProcessPast(X_past, R_past):
     return input_vectors
 
 
+########################  Dataset for generating robot trajectories  ########################
 def GenTrainTestGeneratedDatasets(csv_path, past_steps, future_steps):
     csv_data = pd.read_csv(csv_path)
     person_ids = csv_data["id"].unique()
@@ -82,14 +83,14 @@ class GeneratedTrajectoryDataset(Dataset):
 
         # present_tangent = X_past[:, -1] - X_past[:, -2]
 
-        #########  Constraining velocities to be same direction as person  ##########
+        ###############  Constraining velocities to be same direction as person  ##############
         # breakpoint()
         v = np.random.uniform(-1, 1, size=2)
         v /= np.linalg.norm(v)
         s = random.uniform(0, 2)
         v *= s
 
-        ##########  Generating the path for the robot  ########
+        #################  Generating the path for the robot  ##############
         starting_pos = (
             X_past[:, 0] + initial_offset
         )  # starting points for the generated line
@@ -108,27 +109,10 @@ class GeneratedTrajectoryDataset(Dataset):
 
         generated_traj = np.array([generated_traj_x, generated_traj_y])
 
-        # Call ProcessPast
+        # Getting the input vectors for the network (past relative vectors and the velocites of the robot)
         input_vectors = ProcessPast(X_past, generated_traj)
 
-        # #########  Shifting it to the robot's coordinate frame  ##########
-        # curr_pos = generated_traj[:, -1].copy()
-        # generated_traj[0] -= generated_traj[0, -1]
-        # generated_traj[1] -= generated_traj[1, -1]
-
-        # X_past[0] -= curr_pos[0]
-        # X_past[1] -= curr_pos[1]
-        # X_future[0] -= curr_pos[0]
-        # X_future[1] -= curr_pos[1]
-        # past_relative_vectors = X_past - generated_traj
-
-        # # getting the velocity at each step
-        # # breakpoint()
-        # X_vel = generated_traj[:, 1:] - generated_traj[:, :-1]
-        # X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
-        # input_vectors = np.vstack((past_relative_vectors, X_vel))
-
-        ##########  Calculating the target position  ##########
+        #################  Calculating the target position  ################
         X = -1 * np.copy(input_vectors[:2, -1])
         present_perp = np.array(
             [X_past[1, -1] - X_past[1, -2], -(X_past[0, -1] - X_past[0, -2])]
@@ -153,20 +137,20 @@ class GeneratedTrajectoryDataset(Dataset):
             future_pos = X_future[:2, -1] + offset - generated_traj[:, -1]
 
         # ##########  Graphing generated trajectory ###########
-        # plt.figure(figsize=(12, 12))
-        # plt.xlim(-5, 5)
-        # plt.ylim(-5, 5)
-        # plt.scatter(
+        # fig, ax = plt.subplots(figsize=(9, 9))
+        # ax.set_xlim(-5, 5)
+        # ax.set_ylim(-5, 5)
+        # ax.scatter(
         #     X_past[0] - generated_traj[0, -1],
         #     X_past[1] - generated_traj[1, -1],
         #     label="Original Past Trajectory",
         # )
-        # plt.scatter(
+        # ax.scatter(
         #     X_future[0] - generated_traj[0, -1],
         #     X_future[1] - generated_traj[1, -1],
         #     label="Future Trajectory",
         # )
-        # plt.scatter(
+        # ax.scatter(
         #     generated_traj[0] - generated_traj[0, -1],
         #     generated_traj[1] - generated_traj[1, -1],
         #     label="Generated Robot Trajectory",
@@ -174,27 +158,37 @@ class GeneratedTrajectoryDataset(Dataset):
 
         # # breakpoint()
         # for i in range(len(input_vectors[0])):
-        #     plt.plot(
-        #         [
-        #             X_past[0][i] - generated_traj[0][-1],
-        #             X_past[0][i] - input_vectors[0][i] - generated_traj[0][-1],
-        #         ],
-        #         [
-        #             X_past[1][i] - generated_traj[1][-1],
-        #             X_past[1][i] - input_vectors[1][i] - generated_traj[1][-1],
-        #         ],
+        #     ax.arrow(
+        #         generated_traj[0][i] - generated_traj[0][-1],
+        #         generated_traj[1][i] - generated_traj[1][-1],
+        #         input_vectors[0][i],
+        #         input_vectors[1][i],
+        #         color="black",
+        #         width=0.02,
         #     )
+        #     # plt.plot(
+        #     #     [
+        #     #         X_past[0][i] - generated_traj[0][-1],
+        #     #         X_past[0][i] - input_vectors[0][i] - generated_traj[0][-1],
+        #     #     ],
+        #     #     [
+        #     #         X_past[1][i] - generated_traj[1][-1],
+        #     #         X_past[1][i] - input_vectors[1][i] - generated_traj[1][-1],
+        #     #     ],
+        #     #     color="black",
+        #     # )
 
-        # plt.scatter(
+        # ax.scatter(
         #     future_pos[0],
         #     future_pos[1],
         #     color="red",
         #     label="Future Position",
         # )
-        # plt.legend()
-        # plt.title("Trajectories")
-        # plt.xlabel("x")
-        # plt.ylabel("y")
+        # ax.set_aspect("equal")
+        # ax.legend()
+        # fig.suptitle("Trajectories")
+        # ax.set_xlabel("x")
+        # ax.set_ylabel("y")
         # plt.show()
 
         return (
@@ -205,7 +199,7 @@ class GeneratedTrajectoryDataset(Dataset):
             generated_traj,
         )
 
-
+##################  Dataset for the non-generated trajectories  #################
 def GenTrainTestDatasets(csv_path, past_steps, future_steps):
     csv_data = pd.read_csv(csv_path)
     person_ids = csv_data["id"].unique()
