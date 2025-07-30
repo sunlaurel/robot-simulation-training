@@ -7,7 +7,7 @@ from simulation_helper import *
 
 ###########  Initializing constants and global variables  ###########
 MAX_W = 3  # max angular speed (rad/s)
-MAX_V = 1.5  # max linear speed (m/s)
+MAX_V = 1.0  # max linear speed (m/s)
 RADIUS = 1.25  # if human is stopped, robot stay 1m away from human
 MOVE_RADIUS = 1.25
 

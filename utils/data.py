@@ -64,13 +64,9 @@ class GeneratedTrajectoryDataset(Dataset):
         return self.len
 
     def __getitem__(self, idx):
-        initial_offset = random.uniform(
-            -4, 4
-        )  # changing the robot's starting position
-
+        initial_offset = random.uniform(-4, 4)  # changing the robot's starting position
         epsilon = 5e-02
 
-        # TODO: play with the initial x and y offsets and x and y velocities of the robot
         random_person_id = int(random.choice(self.person_ids))
         data = self.position_data[random_person_id]
         random_frame = int(
@@ -81,17 +77,22 @@ class GeneratedTrajectoryDataset(Dataset):
         X_past = data[:, random_frame - self.N_past + 1 : random_frame + 1].copy()
         X_future = data[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
-        # present_tangent = X_past[:, -1] - X_past[:, -2]
-
-        ###############  Constraining velocities to be same direction as person  ##############
+        ###############  Generating noise for the robot ################
+        sigma = 0.1
+        N = np.random.rand(*X_past.shape) * sigma
+        X_past = torch.tensor(X_past)
         # breakpoint()
+        X_past += torch.tensor(N, dtype=torch.float)
+
+        ###############  Generating random velocities for the robot  ##############
         v = np.random.uniform(-1, 1, size=2)
         v /= np.linalg.norm(v)
         s = random.uniform(0, 2)
         v *= s
+        theta = random.uniform(-math.pi / 6, math.pi / 6)
 
         #################  Generating the path for the robot  ##############
-        starting_pos = (
+        starting_pos = np.array(
             X_past[:, 0] + initial_offset
         )  # starting points for the generated line
 
@@ -109,6 +110,13 @@ class GeneratedTrajectoryDataset(Dataset):
 
         generated_traj = np.array([generated_traj_x, generated_traj_y])
 
+        # breakpoint()
+        # generated_traj = np.empty((2, self.N_past))
+        # generated_traj[:, 0] = starting_pos
+
+        # for i in range(1, self.N_past):
+        #     generated_traj[:, i] = generated_traj[:, i - 1] + v * 0.12
+
         # Getting the input vectors for the network (past relative vectors and the velocites of the robot)
         input_vectors = ProcessPast(X_past, generated_traj)
 
@@ -125,7 +133,7 @@ class GeneratedTrajectoryDataset(Dataset):
             ]
         )
 
-        if np.linalg.norm(present_perp) <= epsilon:
+        if np.linalg.norm(present_perp) <= epsilon or np.linalg.norm(future_perp) <= epsilon:
             future_pos = X / np.linalg.norm(X) * RADIUS
         else:
             future_perp /= np.linalg.norm(future_perp)
@@ -138,8 +146,8 @@ class GeneratedTrajectoryDataset(Dataset):
 
         # ##########  Graphing generated trajectory ###########
         # fig, ax = plt.subplots(figsize=(9, 9))
-        # ax.set_xlim(-5, 5)
-        # ax.set_ylim(-5, 5)
+        # # ax.set_xlim(-5, 5)
+        # # ax.set_ylim(-5, 5)
         # ax.scatter(
         #     X_past[0] - generated_traj[0, -1],
         #     X_past[1] - generated_traj[1, -1],
@@ -164,19 +172,8 @@ class GeneratedTrajectoryDataset(Dataset):
         #         input_vectors[0][i],
         #         input_vectors[1][i],
         #         color="black",
-        #         width=0.02,
+        #         width=0.01,
         #     )
-        #     # plt.plot(
-        #     #     [
-        #     #         X_past[0][i] - generated_traj[0][-1],
-        #     #         X_past[0][i] - input_vectors[0][i] - generated_traj[0][-1],
-        #     #     ],
-        #     #     [
-        #     #         X_past[1][i] - generated_traj[1][-1],
-        #     #         X_past[1][i] - input_vectors[1][i] - generated_traj[1][-1],
-        #     #     ],
-        #     #     color="black",
-        #     # )
 
         # ax.scatter(
         #     future_pos[0],
@@ -198,6 +195,7 @@ class GeneratedTrajectoryDataset(Dataset):
             X_future,
             generated_traj,
         )
+
 
 ##################  Dataset for the non-generated trajectories  #################
 def GenTrainTestDatasets(csv_path, past_steps, future_steps):

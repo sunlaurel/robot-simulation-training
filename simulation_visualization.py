@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
-df = pd.read_csv("./simulation-data/sim2.csv")
+df = pd.read_csv("./simulation-data/sim1.csv")
 
 agent_pos_lst = df["agent_past_pos"]
 robot_pos_lst = df["robot_past_pos"]
@@ -24,8 +24,8 @@ print("Model visualized:", save_path)
 network.load_state_dict(torch.load(save_path, weights_only=True))
 
 
-while True:
-    i = random.randint(10, len(df) - 1)
+for i in range(0, len(df) - 1):
+    # i = random.randint(10, len(df) - 1)
     agent_pos = np.array(ast.literal_eval(agent_pos_lst[i]))
     robot_pos = np.array(ast.literal_eval(robot_pos_lst[i]))
     target_pos = ast.literal_eval(target_pos_lst[i])
@@ -75,7 +75,7 @@ while True:
     plt.ylabel("y")
     plt.legend()
     plt.title("Simulation Visualization")
-    # plt.xlim(0, 10)
-    # plt.ylim(0, 8)
+    plt.xlim(0, 13)
+    plt.ylim(0, 10)
 
     plt.show()
