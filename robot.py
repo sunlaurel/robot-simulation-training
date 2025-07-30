@@ -107,7 +107,7 @@ class Robot:
         # breakpoint()
 
         # putting the target position in absolute coordinates
-        self.target_pos = target + X_past[:, -1]
+        self.target_pos = target + self.past_trajectory[:, -1]
         print("target position:", self.target_pos)
 
         #############  Robot Behavior  ################
