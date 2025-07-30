@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
-df = pd.read_csv("./simulation-data/sim1.csv")
+df = pd.read_csv("./simulation-data/sim2.csv")
 
 agent_pos_lst = df["agent_past_pos"]
 robot_pos_lst = df["robot_past_pos"]
@@ -37,7 +37,7 @@ while True:
 
     # breakpoint()
     new_predicted = new_predicted.squeeze()
-    fig, ax = plt.subplots(figsize=(9, 7))
+    fig, ax = plt.subplots(figsize=(10, 8))
     ax.scatter(
         agent_pos[0, len(agent_pos[0]) - 10 :],
         agent_pos[1, len(agent_pos[0]) - 10 :],

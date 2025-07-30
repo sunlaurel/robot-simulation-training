@@ -46,7 +46,7 @@ class Robot:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        save_path = "./best-weights-robot/best_weight.pth"
+        save_path = "./best-weights-robot/(big-room)best_weight.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
@@ -107,7 +107,7 @@ class Robot:
         # breakpoint()
 
         # putting the target position in absolute coordinates
-        self.target_pos = target + self.past_trajectory[:, -1]
+        self.target_pos = target + self.pos # self.past_trajectory[:, -1]
         print("target position:", self.target_pos)
 
         #############  Robot Behavior  ################

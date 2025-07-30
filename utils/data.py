@@ -65,7 +65,7 @@ class GeneratedTrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         initial_offset = random.uniform(
-            -2, 2
+            -4, 4
         )  # changing the robot's starting position
 
         epsilon = 5e-02
