@@ -5,7 +5,7 @@ import numpy as np
 
 
 def T_train(
-    X_past, X_future, angle=0, offset=True, scale=True, rotate=True, add_noise=True
+    X_past, X_future, angle=0, offset=True, scale=True, rotate=True, add_noise=True, device="cpu"
 ):
     """Augmenting the data for training"""
     if offset:
@@ -43,10 +43,10 @@ def T_train(
         X_past = rotate(torch.tensor(angle)) @ X_past.float()
         X_future = rotate(torch.tensor(angle)) @ X_future.float()
 
-    return X_past, X_future
+    return X_past.to(device), X_future.to(device)
 
 
-def T_test(X_past, X_future, offset=True, scale=True):
+def T_test(X_past, X_future, offset=True, scale=True, device="cpu"):
     """Applying data augmentation to the testing data"""
     if offset:
         X_start = (X_past[:, 0, -1, None], X_past[:, 1, -1, None])
@@ -70,7 +70,7 @@ def T_test(X_past, X_future, offset=True, scale=True):
         X_past = X_past / 2
         X_future = X_future / 2
 
-    return X_past, X_future
+    return X_past.to(device), X_future.to(device)
 
 
 def train(
@@ -96,6 +96,7 @@ def train(
             scale=scale,
             add_noise=add_noise,
             rotate=rotate,
+            device="cuda"
         )
 
         optimizer.zero_grad()  # Gradients need to be reset each batch
@@ -122,7 +123,7 @@ def test(
     with torch.no_grad():
         for input_pos, target_pos, _, _, _ in test_loader:
             input_pos, target_pos = T_test(
-                input_pos, target_pos, offset=offset, scale=scale
+                input_pos, target_pos, offset=offset, scale=scale, device="cuda"
             )
             # breakpoint()
             output = network(input_pos.float())
@@ -192,6 +193,7 @@ def trainAndGraph(
     epoch_counter = []
     train_loss_history = []
 
+    network.cuda()
     for epoch in range(num_epochs):
         avg_loss = train(
             network,
@@ -204,6 +206,8 @@ def trainAndGraph(
             rotate=rotate,
         )
 
+        # avg_loss = avg_loss.cpu().detach().item()
+
         if avg_loss < best_val_loss:
             best_val_loss = avg_loss
             best_epoch = epoch
@@ -215,6 +219,8 @@ def trainAndGraph(
         test_loss = test(
             network, testing_generator, loss_function, offset=offset, scale=scale
         )
+
+        test_loss = test_loss.cpu().detach().item()
 
         # load it in and compare it to the other model
         logResults(

@@ -24,7 +24,7 @@ print("Model visualized:", save_path)
 network.load_state_dict(torch.load(save_path, weights_only=True))
 
 
-for i in range(0, len(df) - 1):
+for i in range(0, len(df) - 1, 5):
     # i = random.randint(10, len(df) - 1)
     agent_pos = np.array(ast.literal_eval(agent_pos_lst[i]))
     robot_pos = np.array(ast.literal_eval(robot_pos_lst[i]))

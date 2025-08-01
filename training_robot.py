@@ -39,11 +39,11 @@ if __name__ == "__main__":
     )
 
     training_generator = torch.utils.data.DataLoader(
-        training_data, batch_size=batch_size, shuffle=True
+        training_data, batch_size=batch_size, shuffle=True, num_workers=6
     )
 
     testing_generator = torch.utils.data.DataLoader(
-        testing_data, batch_size=batch_size, shuffle=False
+        testing_data, batch_size=batch_size, shuffle=False, num_workers=6
     )
 
     print("Loaded Data")

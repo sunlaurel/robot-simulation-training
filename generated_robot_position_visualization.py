@@ -15,11 +15,12 @@ def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):
     y_future_coords = x_future[1].numpy()
     x_robot_traj_coords = x_robot[0].numpy()
     y_robot_traj_coords = x_robot[1].numpy()
-    x_target_coord = x_target[0]
-    y_target_coord = x_target[1]
-    x_predicted_coord = x_predicted[0]
-    y_predicted_coord = x_predicted[1]
+    x_target_coord = x_target[0] + x_robot[0, -1]
+    y_target_coord = x_target[1] + x_robot[1, -1]
+    x_predicted_coord = x_predicted[0] + x_robot[0, -1]
+    y_predicted_coord = x_predicted[1] + x_robot[1, -1]
 
+    plt.figure(figsize=(9, 9))
     plt.scatter(x_past_coords, y_past_coords, marker="o", color="r")
     plt.scatter(x_future_coords, y_future_coords, marker="o", color="purple")
     plt.plot(
@@ -41,7 +42,7 @@ def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):
             "Past Trajectory",
             "Future Trajectory",
             "Generated Robot Trajectory",
-            "Target Future Robot Position",
+            "Actual Future Robot Position",
             "Predicted Future Robot Position",
         ]
     )
@@ -91,12 +92,18 @@ if __name__ == "__main__":
             target_pos /= 0.5
             predicted /= 0.5
 
+        predicted_w = utils.data.ConvertRobotFrameToAbsolute(X_robot[0], predicted)
+        target_pos_w = utils.data.ConvertRobotFrameToAbsolute(X_robot[0], target_pos[0])
+
+        predicted_w += X_robot[0, :, -1]
+        target_pos_w += X_robot[0, :, -1]
+
         plot_predicted_trajectory(
             x_past=X_past[0],
             x_future=X_future[0],
             x_robot=X_robot[0],
-            x_target=target_pos[0],
-            x_predicted=predicted,
+            x_target=target_pos_w,
+            x_predicted=predicted_w,
         )
 
         # break  # Only plot the first batch to avoid unnecessary looping

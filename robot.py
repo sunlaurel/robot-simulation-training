@@ -76,42 +76,61 @@ class Robot:
         epsilon = 5e-02
 
         ##############  Calculating the target position from the model #############
-        input_vectors = ProcessPast(X_past, self.past_trajectory)
+        relative_vectors_r, robot_velocities_r, _ = ConvertAbsoluteToRobotFrame(
+            X_past,
+            self.past_trajectory,
+            np.array([math.cos(self.theta), math.sin(self.theta)]),
+            np.zeros(2),
+        )
+
+        input_vectors = ProcessPast(relative_vectors_r, robot_velocities_r)
+
         # breakpoint()
         print("######################## new prediction ########################")
         print("input vectors:", input_vectors)
         print("agent past:", X_past)
-        print("robot post:", self.past_trajectory)
+        print("robot past:", self.past_trajectory)
 
-        input_vectors[:2] = T(
-            input_vectors[:2],
-            self.pos,
-            offset=self.offset,
-            scale=self.scale,
-            scale_factor=self.model.scale_factor,
-        )
+        # input_vectors[:2] = T(
+        #     input_vectors[:2],
+        #     self.pos,
+        #     offset=self.offset,
+        #     scale=self.scale,
+        #     scale_factor=self.model.scale_factor,
+        # )
 
         with torch.no_grad():
-            target = self.model(torch.tensor(input_vectors).float().unsqueeze(0))
+            target = self.model(
+                torch.tensor(input_vectors).float().unsqueeze(0)
+            ).squeeze()
 
-        target = T_inv(
-            target.squeeze(),
-            self.pos,
-            offset=self.offset,
-            scale=self.scale,
-            scale_factor=self.model.scale_factor,
-        )
+        # target = T_inv(
+        #     target.squeeze(),
+        #     self.pos,
+        #     offset=self.offset,
+        #     scale=self.scale,
+        #     scale_factor=self.model.scale_factor,
+        # )
 
         # target[1] = target[1] * -1
         print("offset:", target)
         # breakpoint()
 
         # putting the target position in absolute coordinates
-        self.target_pos = target + self.pos # self.past_trajectory[:, -1]
+
+        self.target_pos = (
+            ConvertRobotFrameToAbsolute(
+                np.array([math.cos(self.theta), math.sin(self.theta)]), target
+            )
+            + self.past_trajectory[:, -1]
+        )
+        print("past trajectory:", self.past_trajectory[:, -1])
+        # self.target_pos = target + self.pos  # self.past_trajectory[:, -1]
         print("target position:", self.target_pos)
 
         #############  Robot Behavior  ################
         # calculating the angles and where the robot should move
+        # breakpoint()
         direction = np.array(self.target_pos) - self.pos
         distance = np.linalg.norm(direction)
 
