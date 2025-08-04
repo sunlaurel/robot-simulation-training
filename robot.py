@@ -6,8 +6,8 @@ from simulation_helper import *
 
 
 ###########  Initializing constants and global variables  ###########
-MAX_W = 3  # max angular speed (rad/s)
-MAX_V = 1.0  # max linear speed (m/s)
+MAX_W = 6  # max angular speed (rad/s)
+MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.25  # if human is stopped, robot stay 1m away from human
 MOVE_RADIUS = 1.25
 
@@ -46,7 +46,8 @@ class Robot:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        save_path = "./best-weights-robot/(big-room)best_weight.pth"
+        # save_path = "./best-weights-robot/(big-room)best_weight.pth"
+        save_path = "./best-weights-robot/(change-stand)best_weight.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
@@ -65,6 +66,14 @@ class Robot:
             dtype=float,  # storing past trajectories
         )
 
+        self.past_headings = np.array(
+            (
+                np.full(self.N_past, math.cos(theta)),
+                np.full(self.N_past, math.sin(theta)),
+            ),
+            dtype=float,  # storing past headings
+        )
+
     def angle_difference(self, target_angle):
         # forcing the angle to be between -pi to pi
         diff = target_angle - self.theta
@@ -79,42 +88,18 @@ class Robot:
         relative_vectors_r, robot_velocities_r, _ = ConvertAbsoluteToRobotFrame(
             X_past,
             self.past_trajectory,
-            np.array([math.cos(self.theta), math.sin(self.theta)]),
+            self.past_headings,
             np.zeros(2),
         )
 
         input_vectors = ProcessPast(relative_vectors_r, robot_velocities_r)
 
         # breakpoint()
-        print("######################## new prediction ########################")
-        print("input vectors:", input_vectors)
-        print("agent past:", X_past)
-        print("robot past:", self.past_trajectory)
-
-        # input_vectors[:2] = T(
-        #     input_vectors[:2],
-        #     self.pos,
-        #     offset=self.offset,
-        #     scale=self.scale,
-        #     scale_factor=self.model.scale_factor,
-        # )
 
         with torch.no_grad():
             target = self.model(
                 torch.tensor(input_vectors).float().unsqueeze(0)
             ).squeeze()
-
-        # target = T_inv(
-        #     target.squeeze(),
-        #     self.pos,
-        #     offset=self.offset,
-        #     scale=self.scale,
-        #     scale_factor=self.model.scale_factor,
-        # )
-
-        # target[1] = target[1] * -1
-        print("offset:", target)
-        # breakpoint()
 
         # putting the target position in absolute coordinates
 
@@ -124,9 +109,8 @@ class Robot:
             )
             + self.past_trajectory[:, -1]
         )
-        print("past trajectory:", self.past_trajectory[:, -1])
+
         # self.target_pos = target + self.pos  # self.past_trajectory[:, -1]
-        print("target position:", self.target_pos)
 
         #############  Robot Behavior  ################
         # calculating the angles and where the robot should move
@@ -195,10 +179,14 @@ class Robot:
             self.theta = self.theta + 2 * math.pi
         self.pos += v * self.dt
 
-        """ Updating the target position from the new positions """
+        """ Updating the target position and headings from the new positions """
         self.past_trajectory[:, :-1] = self.past_trajectory[:, 1:]
         self.past_trajectory[0][-1] = self.pos[0]
         self.past_trajectory[1][-1] = self.pos[1]
+
+        self.past_headings[:, :-1] = self.past_headings[:, 1:]
+        self.past_headings[0][-1] = math.cos(self.theta)
+        self.past_headings[1][-1] = math.sin(self.theta)
 
     # Adding event handlers for arrow keys to adjust robot's velocity and position
     def handle_event(self, event):

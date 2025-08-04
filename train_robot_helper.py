@@ -212,7 +212,7 @@ def trainAndGraph(
             best_val_loss = avg_loss
             best_epoch = epoch
             best_model_weights = network.state_dict()  # Save weights in memory
-            save_path = f"./best-weights-robot/(big-room)best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
+            save_path = f"./best-weights-robot/(change-stand)best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
 
             torch.save(best_model_weights, save_path)  # Load weights on disk
 
