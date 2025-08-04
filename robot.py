@@ -46,8 +46,8 @@ class Robot:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        # save_path = "./best-weights-robot/(big-room)best_weight.pth"
-        save_path = "./best-weights-robot/(change-stand)best_weight.pth"
+        # save_path = "./weights/best-weights-robot/(big-room)best_weight.pth"
+        save_path = "./weights/best-weights-robot/(change-stand)best_weight.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path

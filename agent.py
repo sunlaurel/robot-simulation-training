@@ -31,7 +31,7 @@ class Agent:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        save_path = "./best-weights/best_weight_offset.pth"
+        save_path = "./weights/best-weights/best_weight_offset.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
@@ -87,39 +87,39 @@ class Agent:
                 radius=5,
             )
 
-        # # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory
-        # for i in range(0, 3):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 255, 0),
-        #         (
-        #             int(meters_to_pixels(self.future_trajectory[0][i])),
-        #             int(meters_to_pixels(self.future_trajectory[1][i])),
-        #         ),
-        #         radius=5,
-        #     )
+        # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory
+        for i in range(0, 3):
+            pygame.draw.circle(
+                surface,
+                (0, 255, 0),
+                (
+                    int(meters_to_pixels(self.future_trajectory[0][i])),
+                    int(meters_to_pixels(self.future_trajectory[1][i])),
+                ),
+                radius=5,
+            )
 
-        # for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 153, 0),
-        #         (
-        #             int(meters_to_pixels(self.future_trajectory[0][i])),
-        #             int(meters_to_pixels(self.future_trajectory[1][i])),
-        #         ),
-        #         radius=5,
-        #     )
+        for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
+            pygame.draw.circle(
+                surface,
+                (0, 153, 0),
+                (
+                    int(meters_to_pixels(self.future_trajectory[0][i])),
+                    int(meters_to_pixels(self.future_trajectory[1][i])),
+                ),
+                radius=5,
+            )
 
-        # for x, y in convert_to_tuple_list(self.future_trajectory):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 255, 0),
-        #         (
-        #             int(meters_to_pixels(x)),
-        #             int(meters_to_pixels(y)),
-        #         ),
-        #         radius=5,
-        #     )
+        for x, y in convert_to_tuple_list(self.future_trajectory):
+            pygame.draw.circle(
+                surface,
+                (0, 255, 0),
+                (
+                    int(meters_to_pixels(x)),
+                    int(meters_to_pixels(y)),
+                ),
+                radius=5,
+            )
 
     def update(self, x, y):
         """When updating, it updates its past trajectory and then predicts a new path from the trained model

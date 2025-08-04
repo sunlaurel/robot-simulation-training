@@ -69,8 +69,8 @@ if __name__ == "__main__":
         output_size=2,
     )
 
-    save_path = f"./best-weights-robot/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if noise_flag else ''}.pth"
-    save_path = "./best-weights-robot/(big-room)best_weight.pth"
+    save_path = f"./weights/best-weights-robot/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if noise_flag else ''}.pth"
+    save_path = "./weights/best-weights-robot/(big-room)best_weight.pth"
     print("Model visualized:", save_path)
 
     network.load_state_dict(torch.load(save_path, weights_only=True))
