@@ -76,7 +76,7 @@ if __name__ == "__main__":
     network.load_state_dict(torch.load(save_path, weights_only=True))
 
     training_data, testing_data = utils.data.GenTrainTestGeneratedDatasets(
-        "./training-data/crowd_data.csv", past_steps, future_steps
+        "./data/training-data/crowd_data.csv", past_steps, future_steps
     )
 
     data_loader = DataLoader(training_data, batch_size=1, shuffle=False)
