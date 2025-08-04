@@ -1,7 +1,9 @@
 # Investigating Potential of Social Navigation with Companion Robots in Outdoor Settings
 
 ## Overview
-Trained a neural network to walk alongside people in simulation
+ Outdoor spaces and trails have played an important role in improving mental and physical health as well as fostering sustainable communities
+
+ This project investigates the practicality of deploying robot companions to naturally accompany people walking outdoors
 
 ## Sample Results
 We trained a multilayer perceptron (MLP) on crowd data of people walking and generated robot trajectories, passing in past relative vectors between the robot's past trajectory and the person's past trajectory to predict the future position that the robot should walk to in the robot's frame. Below are some sample trajectories and the predicted positions outputted by the model.
@@ -23,4 +25,4 @@ We trained a multilayer perceptron (MLP) on crowd data of people walking and gen
 
 
 ## Acknowledgements
-Thanks to (Zach Chavis)["chavi014@umn.edu"] and (Stephen J. Guy)[https://www-users.cse.umn.edu/~sjguy/] for their invaluable mentorship during the NSF CSE REU at the University of Minnesota and making this experience possible
+Thanks to [Zach Chavis](chavi04@umnd.edu) and [Stephen J. Guy](https://www-users.cse.umn.edu/~sjguy/) for their invaluable mentorship during the NSF CSE REU at the University of Minnesota and making this experience possible
