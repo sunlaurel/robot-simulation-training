@@ -11,9 +11,9 @@ We trained a multilayer perceptron (MLP) on crowd data of people walking and gen
   <! ![Sample Trajectory #1](/images/traj1.png)  |  ![Sample Trajectory #2](/images/traj2.png)  |  ![Sample Trajectory #3](/images/traj3.png) --> 
 
   <p float="center">
-    <img src="/images/traj1.png" width="300" />
-    <img src="/images/traj2.png" width="300" /> 
-    <img src="/images/traj3.png" width="300" />
+    <img src="/images/traj1.png" width="250" />
+    <img src="/images/traj2.png" width="250" /> 
+    <img src="/images/traj3.png" width="250" />
   </p>
 
 </html>
