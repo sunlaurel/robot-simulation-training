@@ -25,4 +25,4 @@ We trained a multilayer perceptron (MLP) on crowd data of people walking and gen
 
 
 ## Acknowledgements
-Thanks to [Zach Chavis](chavi04@umnd.edu) and [Stephen J. Guy](https://www-users.cse.umn.edu/~sjguy/) for their invaluable mentorship during the NSF CSE REU at the University of Minnesota and making this experience possible
+Thanks to [Zach Chavis](https://sites.google.com/umn.edu/zachsportfolio) and [Stephen J. Guy](https://www-users.cse.umn.edu/~sjguy/) for their invaluable mentorship during the NSF CSE REU at the University of Minnesota and making this experience possible
