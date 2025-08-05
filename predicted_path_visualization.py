@@ -32,7 +32,11 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
         x_predicted_coords, y_predicted_coords, marker="o", linestyle="-", color="g"
     )
     plt.plot(
-        x_baseline_coords, y_baseline_coords, marker="o", linestyle="-", color=(0.6, 0.3, 0.9)
+        x_baseline_coords,
+        y_baseline_coords,
+        marker="o",
+        linestyle="-",
+        color=(0.6, 0.3, 0.9),
     )
     plt.plot(
         x_stand_coords, y_stand_coords, marker="o", linestyle="-", color=(1, 0.647, 0)
@@ -71,13 +75,13 @@ if __name__ == "__main__":
         hidden_layer2=100,
         output_size=2 * future_steps,
     )
-    # save_path = f"./best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}.pth"
+
     save_path = f"./weights/best-weights/best_weight{'_noise' if noise_flag else ''}{'_rotate' if rotate_flag else ''}{'_scale' if scale_flag else ''}{'_offset' if offset_flag else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if noise_flag else ''}.pth"
     print("Model visualized:", save_path)
     network.load_state_dict(torch.load(save_path, weights_only=True))
 
     _, testing_data = utils.data.GenTrainTestDatasets(
-        "./training-data/crowd_data.csv", past_steps, future_steps
+        "./data/training-data/crowd_data.csv", past_steps, future_steps
     )
 
     data_loader = DataLoader(testing_data, batch_size=1, shuffle=True)

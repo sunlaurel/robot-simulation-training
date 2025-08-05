@@ -63,7 +63,7 @@ if __name__ == "__main__":
                         # breakpoint()
                         sample_number += 1
                         df = pd.DataFrame(csv_data)
-                        df.to_csv(f"./simulation-data/sim{sample_number}.csv", index=False)
+                        df.to_csv(f"./data/simulation-data/sim{sample_number}.csv", index=False)
                         csv_data = []
                     record_data = not record_data
             

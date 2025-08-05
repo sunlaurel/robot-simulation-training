@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
-df = pd.read_csv("./simulation-data/sim1.csv")
+df = pd.read_csv("./data/simulation-data/sim1.csv")
 
 agent_pos_lst = df["agent_past_pos"]
 robot_pos_lst = df["robot_past_pos"]
@@ -19,7 +19,7 @@ network = utils.models.MultiLayerRobot(
     output_size=2,
 )
 
-save_path = "./best-weights-robot/best_weight.pth"
+save_path = "./weights/best-weights-robot/best_weight.pth"
 print("Model visualized:", save_path)
 network.load_state_dict(torch.load(save_path, weights_only=True))
 

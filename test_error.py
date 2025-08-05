@@ -4,7 +4,7 @@ from train_helper import T_test
 import torch
 import re
 
-save_path = "./best-weights/best_weight_noise_rotate_offset(17-past)(0.1-sigma).pth"
+save_path = "./weights/best-weights/best_weight_noise_rotate_offset(17-past)(0.1-sigma).pth"
 match = re.search(r"\((\d+)-past\)", save_path)
 
 # extracting number of past steps from the file name
@@ -23,7 +23,7 @@ network = utils.models.MultiLayer(
 network.load_state_dict(torch.load(save_path, weights_only=True))
 
 _, testing_data = utils.data.GenTrainTestDatasets(
-    csv_path="./training-data/crowd_data.csv",
+    csv_path="./data/training-data/crowd_data.csv",
     past_steps=past_steps,
     future_steps=future_steps,
 )

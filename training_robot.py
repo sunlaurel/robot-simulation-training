@@ -33,7 +33,7 @@ loss_function = nn.L1Loss()
 if __name__ == "__main__":
     # Load the data, and split it into batches
     training_data, testing_data = GenTrainTestGeneratedDatasets(
-        csv_path="./training-data/crowd_data.csv",
+        csv_path="./data/training-data/crowd_data.csv",
         past_steps=past_steps,
         future_steps=future_steps,
     )
