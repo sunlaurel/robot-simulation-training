@@ -4,7 +4,7 @@ import torch
 import json
 
 
-""" Multi Layer Perceptron (MLP) for preidcting N steps into the future """
+""" Multi Layer Perceptron (MLP) for predicting N steps into the future """
 class MultiLayer(nn.Module):
 
     def __init__(
@@ -38,7 +38,7 @@ class MultiLayer(nn.Module):
         return out
 
 
-""" Multi Layer Perceptron (MLP) for preidcting N steps into the future """
+""" Multi Layer Perceptron (MLP) for robot predicting future position to reach """
 class MultiLayerRobot(nn.Module):
 
     def __init__(
