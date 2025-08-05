@@ -17,6 +17,8 @@ def ProcessPast(past_relative_vectors, robot_velocities_r):
     # past_relative_vectors = X_past - R_past
     # X_vel = R_past[:, 1:] - R_past[:, :-1]
     # X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
+    print(past_relative_vectors.shape)
+    print(robot_velocities_r.shape)
     input_vectors = np.vstack((past_relative_vectors, robot_velocities_r))
 
     return input_vectors
@@ -207,6 +209,10 @@ class GeneratedTrajectoryDataset(Dataset):
         X_future = data[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
         ###############  Generating noise for the robot ################
+        # TODO: add more noise to the velocities of the robot
+        # TODO: add more noise (increase the sigma) to the past relative vectors of the robot
+        # TODO: train new weights and then test them in simulation
+
         sigma = 0.1
         N = np.random.rand(*X_past.shape) * sigma
         X_past = torch.tensor(X_past)

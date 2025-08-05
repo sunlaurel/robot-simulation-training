@@ -9,7 +9,6 @@ from simulation_helper import *
 MAX_W = 6  # max angular speed (rad/s)
 MAX_V = 1.5  # max linear speed (m/s)
 RADIUS = 1.25  # if human is stopped, robot stay 1m away from human
-MOVE_RADIUS = 1.25
 
 global v_last  # last significant velocity
 v_last = np.array([1.0, 0.0])
@@ -59,7 +58,11 @@ class Robot:
             self.N_past = int(match.group(1))
 
         self.model = models.MultiLayerRobot(4 * self.N_past, 100, 100, 2)
-        self.model.load_state_dict(torch.load(save_path, weights_only=True))
+        # self.model.load_state_dict(torch.load(save_path, weights_only=True))
+        # self.model.load_state_dict(torch.load(save_path))
+        self.model.load_state_dict(
+            torch.load(save_path, map_location=torch.device("cpu"))
+        )  # use this for non-gpu machines
 
         self.past_trajectory = np.array(
             (np.full(self.N_past, x), np.full(self.N_past, y)),
@@ -80,6 +83,7 @@ class Robot:
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
     def policy(self, X_past):
+        # TODO: move everything so that the policy is only being done relative to the robot
         global v_last, target_pos
         # alpha = 0.2
         epsilon = 5e-02
@@ -131,7 +135,7 @@ class Robot:
             w = angle_diff
 
         # calculating the linear velocity
-        if distance < MOVE_RADIUS:
+        if distance < RADIUS:
             # if within a certain radius, decouple angular velocity and linear velocity
             v = direction
             target_angle = math.atan2(

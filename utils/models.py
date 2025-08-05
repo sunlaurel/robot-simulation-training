@@ -60,6 +60,8 @@ class MultiLayerRobot(nn.Module):
         self, x, features=2
     ):  # Forward pass which defines how the layers relate the input x to the output
         x *= self.scale_factor
+        print("x shape:", x.shape)
+        breakpoint()
         batch_size = x.size(0)  # Store the batch size before flattening
         x = x.view(batch_size, -1)  # Flatten the input x
         x = F.relu(self.linear1(x))  # Linear transform, then relu
