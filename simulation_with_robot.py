@@ -4,7 +4,7 @@ import math
 import pandas as pd
 import numpy as np
 from agent import Agent
-from robot import Robot, RADIUS, MOVE_RADIUS
+from robot import Robot, RADIUS
 from utils import *
 from simulation_helper import *
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         draw_transparent_circle(
             screen,
             np.vectorize(meters_to_pixels)(robot.pos),
-            int(meters_to_pixels(MOVE_RADIUS)),
+            int(meters_to_pixels(RADIUS)),
         )
 
         agent.draw(screen)

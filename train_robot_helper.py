@@ -5,7 +5,14 @@ import numpy as np
 
 
 def T_train(
-    X_past, X_future, angle=0, offset=True, scale=True, rotate=True, add_noise=True, device="cpu"
+    X_past,
+    X_future,
+    angle=0,
+    offset=True,
+    scale=True,
+    rotate=True,
+    add_noise=True,
+    device="cpu",
 ):
     """Augmenting the data for training"""
     if offset:
@@ -96,7 +103,7 @@ def train(
             scale=scale,
             add_noise=add_noise,
             rotate=rotate,
-            device="cuda"
+            device="cuda",
         )
 
         optimizer.zero_grad()  # Gradients need to be reset each batch
@@ -212,7 +219,7 @@ def trainAndGraph(
             best_val_loss = avg_loss
             best_epoch = epoch
             best_model_weights = network.state_dict()  # Save weights in memory
-            save_path = f"./weights/best-weights-robot/(change-stand)best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
+            save_path = f"./weights/best-weights-robot/(more-noise-velocities-vectors)best_weight{'_noise' if add_noise else ''}{'_rotate' if rotate else ''}{'_scale' if scale else ''}{'_offset' if offset else ''}{'(' + str(past_steps) + '-past)' if past_steps != 10 else ''}{'(0.1-sigma)' if add_noise else ''}.pth"
 
             torch.save(best_model_weights, save_path)  # Load weights on disk
 

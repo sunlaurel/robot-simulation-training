@@ -14,11 +14,6 @@ RADIUS = 0.75
 
 
 def ProcessPast(past_relative_vectors, robot_velocities_r):
-    # past_relative_vectors = X_past - R_past
-    # X_vel = R_past[:, 1:] - R_past[:, :-1]
-    # X_vel = np.column_stack((X_vel, X_vel[:, -1].copy()))
-    print(past_relative_vectors.shape)
-    print(robot_velocities_r.shape)
     input_vectors = np.vstack((past_relative_vectors, robot_velocities_r))
 
     return input_vectors
@@ -91,7 +86,7 @@ def ConvertAbsoluteToRobotFrame(X_past, R_past, heading, future_pos):
         #     ax[0].arrow(R_past[0,i], R_past[1,i], current_relative_future_position_w[0], current_relative_future_position_w[1], color="purple")
         #     ax[0].scatter(R_past[0], R_past[1], color="black")
         #     ax[0].scatter(X_past[0], X_past[1], color="gray")
-            
+
         #     # ax[1].arrow(0, 0, current_relative_velocity_r[0], current_relative_velocity_r[1], color="orange")
         #     # ax[1].arrow(0, 0, R_tangent_r[0, i], R_tangent_r[1, i], color="red")
         #     # ax[1].arrow(0, 0, R_perpendicular_r[0, i], R_perpendicular_r[1, i], color="green")
@@ -102,7 +97,6 @@ def ConvertAbsoluteToRobotFrame(X_past, R_past, heading, future_pos):
         #     ax[1].arrow(0, 0, R_perpendicular_r[0, i], R_perpendicular_r[1, i], color="green")
         #     ax[1].arrow(0, 0, current_relative_vector_r[0], current_relative_vector_r[1], color="gray")
         #     ax[1].arrow(0, 0, relative_future_position_r[0], relative_future_position_r[1], color="purple")
-            
 
         #     ax[0].set_aspect("equal")
         #     ax[1].set_aspect("equal")
@@ -209,11 +203,10 @@ class GeneratedTrajectoryDataset(Dataset):
         X_future = data[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
         ###############  Generating noise for the robot ################
-        # TODO: add more noise to the velocities of the robot
         # TODO: add more noise (increase the sigma) to the past relative vectors of the robot
-        # TODO: train new weights and then test them in simulation
+        # TODO: train the robot to take in 2 seconds of data (20 past frames)
 
-        sigma = 0.1
+        sigma = 0.15
         N = np.random.rand(*X_past.shape) * sigma
         X_past = torch.tensor(X_past)
         X_past += torch.tensor(N, dtype=torch.float)
@@ -233,20 +226,6 @@ class GeneratedTrajectoryDataset(Dataset):
         starting_pos = np.array(
             X_past[:, 0] + initial_offset
         )  # starting points for the generated line
-
-        # generated_traj_x = np.linspace(
-        #     starting_pos[0],
-        #     starting_pos[0] + (self.N_past - 1) * v[0] * 0.12,
-        #     self.N_past,
-        # )
-
-        # generated_traj_y = np.linspace(
-        #     starting_pos[1],
-        #     starting_pos[1] + (self.N_past - 1) * v[1] * 0.12,
-        #     self.N_past,
-        # )
-
-        # generated_traj = np.array([generated_traj_x, generated_traj_y])
 
         # Alternating between curved or straight path
         curved_or_straight_path = bool(random.randint(0, 1))
@@ -285,8 +264,9 @@ class GeneratedTrajectoryDataset(Dataset):
             if (
                 np.linalg.norm(X) <= RADIUS
             ):  # if the robot is within 0.75m of the person, then the future position is the robot's current position
-                # breakpoint()
-                future_pos = 0.9 * torch.tensor(generated_traj[:, -1]) + 0.1 * X_past[:, -1]
+                future_pos = (
+                    0.9 * torch.tensor(generated_traj[:, -1]) + 0.1 * X_past[:, -1]
+                )
             else:
                 future_pos = X / np.linalg.norm(X) * RADIUS + X_past[:, -1].numpy()
 
@@ -296,19 +276,27 @@ class GeneratedTrajectoryDataset(Dataset):
             t = X @ present_perp
             offset = t * future_perp
             offset = offset / np.linalg.norm(offset) * RADIUS
-            offset = future_perp  # trying just using the future position as the orthogonal vector of the 2 future positions
-            future_pos = X_future[:2, -1] + offset  # - generated_traj[:, -1]
+            offset = future_perp  # future pos is the orthogonal vector of the 2 future positions
+            future_pos = X_future[:2, -1] + offset
 
         #######################  Generating the input for the model  #############################
         heading = generated_traj[:, 1:] - generated_traj[:, :-1]
+
+        # generating noise for the robot's velocities
+        sigma_v = 0.15
+        N_v = np.random.rand(*heading.shape) * sigma_v
+        heading = torch.tensor(heading)
+        heading += torch.tensor(N_v, dtype=torch.float)
+
+        # shifting vectors into the robot's coordinate frame
         relative_vectors_r, robot_velocities_r, future_pos_r = (
             ConvertAbsoluteToRobotFrame(X_past, generated_traj, heading, future_pos)
         )
 
-        # input vectors are all relative to the robot
+        # creating the input array to the model
         input_vectors_r = ProcessPast(relative_vectors_r, robot_velocities_r)
 
-        # GraphTrajectory(X_past, X_future, input_vectors, generated_traj, future_pos)
+        plt.show()
 
         return (
             input_vectors_r,
