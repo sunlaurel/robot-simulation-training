@@ -46,7 +46,7 @@ class Robot:
 
         # initializing the model
         # save_path = "./weights/best-weights-robot/(big-room)best_weight.pth"
-        save_path = "./weights/best-weights-robot/(more-noise-velocities-vectors)best_weight.pth"
+        save_path = "./weights/best-weights-robot/(more-noise-velocities-vectors)best_weight(20-past).pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path

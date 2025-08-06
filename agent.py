@@ -31,7 +31,7 @@ class Agent:
         self.N_past = data["past-steps"]
 
         # initializing the model
-        save_path = "./weights/best-weights/best_weight_offset.pth"
+        save_path = "./weights/best-weights/best_weight_noise_scale_offset(20-past)(0.1-sigma).pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
