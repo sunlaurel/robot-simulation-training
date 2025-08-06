@@ -296,7 +296,7 @@ class GeneratedTrajectoryDataset(Dataset):
         # creating the input array to the model
         input_vectors_r = ProcessPast(relative_vectors_r, robot_velocities_r)
 
-        plt.show()
+        # plt.show()
 
         return (
             input_vectors_r,
