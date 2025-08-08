@@ -4,6 +4,16 @@ import re
 from utils import *
 from simulation_helper import *
 
+#################################################################
+##   Overview                                                  ##
+##   - renders the robot on the screen                         ##
+##   - contains the policy of the robot                        ##
+##   - the model predicts the future position that the robot   ##
+##     should be in the future                                 ##
+##   - change save_path to change what model is running in     ##
+##     the simulation                                          ##
+#################################################################
+
 
 ###########  Initializing constants and global variables  ###########
 MAX_W = 6  # max angular speed (rad/s)

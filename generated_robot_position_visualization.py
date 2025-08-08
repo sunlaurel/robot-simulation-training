@@ -3,7 +3,12 @@ import torch
 from torch.utils.data import DataLoader
 import json
 import matplotlib.pyplot as plt
-from train_helper import T_test
+
+#################################################################
+##    Overview                                                 ##
+##    - plots the predicted future position that the robot     ##
+##      should go to in world coordinates                      ##
+#################################################################
 
 
 def plot_predicted_trajectory(x_past, x_future, x_robot, x_target, x_predicted):

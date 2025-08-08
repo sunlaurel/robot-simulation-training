@@ -8,6 +8,20 @@ from robot import Robot, RADIUS
 from utils import *
 from simulation_helper import *
 
+###############################################################
+##   Overview                                                ##
+##   - run this script to start the simulation with the      ##
+##     robot                                                 ##
+##   - press r to start recording trajectories from the      ##
+##     simulation, and press r again to stop recording       ##
+##     - the trajectories are saved in data/simulation-data  ##
+##   - press the up arrow to increase noise in the agent's   ##
+##     past positions / trajectories                         ##
+##   - press the down arrow to decrease the noise            ##
+##   - set AGENT_PREDICT_FLAG to True if want to display     ##
+##     the agent's future trajectories                       ##
+###############################################################
+
 """ Constants """
 WIDTH, HEIGHT = 13, 10
 BG_COLOR = (255, 255, 255)

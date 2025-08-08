@@ -9,6 +9,15 @@ WIDTH, HEIGHT = 10, 10
 BG_COLOR = (255, 255, 255)
 FPS = 30
 
+###############################################################
+##   Overview                                                ##
+##   - run this script to start the simulation with just     ##
+##     the agent                                             ##
+##   - press the up arrow to increase noise in the agent's   ##
+##     past positions / trajectories                         ##
+##   - press the down arrow to decrease the noise            ##
+###############################################################
+
 
 """ Initializing the game + setup """
 if __name__ == "__main__":

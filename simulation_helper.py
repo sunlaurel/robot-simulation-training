@@ -1,6 +1,12 @@
 import numpy as np
 import pygame
 
+##############################################################
+##   Overview                                               ##
+##   - helper functions for the simulator                   ##
+##############################################################
+
+
 """ Functions """
 def meters_to_pixels(m):
     """Converts from meters to pixels to display on screen"""

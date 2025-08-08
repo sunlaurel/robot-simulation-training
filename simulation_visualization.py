@@ -1,10 +1,15 @@
-import random
 import pandas as pd
 import ast
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
+
+#################################################################
+##   Overview                                                  ##
+##   - records sample data from the simulation and visualizes  ##
+##     them in matplotlib                                      ##
+#################################################################
 
 df = pd.read_csv("./data/simulation-data/sim1.csv")
 

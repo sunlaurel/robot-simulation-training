@@ -3,6 +3,12 @@ import torch
 import random
 import numpy as np
 
+###############################################################
+##   Overview                                                ##
+##   - helper functions for training the model to predict    ##
+##     the future position that the robot should go to       ##
+###############################################################
+
 
 def T_train(
     X_past,

@@ -4,6 +4,13 @@ import pygame
 from utils import *
 from simulation_helper import *
 
+########################################################
+##  Overview                                          ##
+##  - renders the agent (the person) on the screen    ##
+##  - if display_flag is on, then will display the    ##
+##    model's predicted trajectory on the screen      ##
+########################################################
+
 
 class Agent:
 
@@ -23,7 +30,7 @@ class Agent:
         self.sigma = 0
         self.epsilon = epsilon
         self.sigma_max = sigma_max
-        self.display_flag = display_flag
+        self.display_flag = display_flag  # if display_flag is on, then predicts and displays predictions of the agent's future position
 
         """ Importing constants from the config file """
         with open("./utils/config.json", "r", encoding="utf-8") as file:

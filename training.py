@@ -1,6 +1,18 @@
 from utils import *
 from train_helper import *
 
+###########################################################
+##  Overview                                             ##
+##  - run this script to train a model that predicts     ##
+##    N future positions of the agent                    ##
+##  - modify utils/config.json to adjust how many past   ##
+##    or future positions you want to take in / predict  ##
+##    into the future                                    ##
+##  - can also modify util/config.json to do data        ##
+##    augmentation                                       ##
+##  - weights are saved in weights/best-weights          ##
+###########################################################
+
 # TODO: reorganize so that all the training scripts are in one folder
 # TODO: reorganize so that all the simulation scripts are in another folder
 

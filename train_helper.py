@@ -4,6 +4,12 @@ import random
 import numpy as np
 from utils import models
 
+###############################################################
+##   Overview                                                ##
+##   - helper functions for training the model to predict    ##
+##     future trajectories of the agent                      ##
+###############################################################
+
 
 def T_train(
     X_past, X_future, angle=0, offset=True, scale=True, rotate=True, add_noise=True

@@ -1,6 +1,17 @@
 from utils import *
 from train_robot_helper import *
 
+###########################################################
+##  Overview                                             ##
+##  - run this script to train a model that predicts     ##
+##    the future position that the robot should be to    ##
+##  - modify utils/config.json to adjust how many past   ##
+##    or future positions you want to take in / predict  ##
+##    into the future                                    ##
+##  - weights are saved in weights/best-weights-robot    ##
+###########################################################
+
+
 # TODO: reorganize so that all the training scripts are in one folder
 # TODO: reorganize so that all the simulation scripts are in another folder
 

@@ -5,6 +5,12 @@ import json
 import matplotlib.pyplot as plt
 from train_helper import T_test
 
+#######################################################
+##   Overview                                        ##
+##   - plots the predicted future trajectory of the  ##
+##     person outputted from the model               ##
+#######################################################
+
 
 def plot_predicted_trajectory(x_past, x_future, x_predicted):
     """Graphs the predicted trajectory compared to the actual trajectory"""
