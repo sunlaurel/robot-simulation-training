@@ -9,8 +9,15 @@ import torch
 import math
 from sklearn.model_selection import train_test_split
 
+###########################################################
+##   Overview                                            ##
+##   - generates robot trajectories for training         ##
+##   - also has functions that convert from world to     ##
+##     robot frame                                       ##
+###########################################################
+
 """ Constants """
-RADIUS = 0.75
+RADIUS = 0.75  # how far the future position should be from the person
 
 
 def ProcessPast(past_relative_vectors, robot_velocities_r):
@@ -28,8 +35,9 @@ def ConvertAbsoluteToRobotFrame(X_past, R_past, heading, future_pos):
     # fig, ax = plt.subplots(figsize=(10, 9))
 
     # TODO: make more efficient without for loop
+    # breakpoint()
     relative_vectors_w = X_past - R_past
-    relative_future_position_w = future_pos[:, None] - R_past
+    relative_future_position_w = torch.tensor(future_pos[:, None]) - torch.tensor(R_past)
     relative_vectors_r_lst = []
     robot_velocity_r_lst = []
     relative_velocities_w = np.zeros_like(R_past)
@@ -203,9 +211,6 @@ class GeneratedTrajectoryDataset(Dataset):
         X_future = data[:, random_frame + 1 : random_frame + 1 + self.N_future].copy()
 
         ###############  Generating noise for the robot ################
-        # TODO: add more noise (increase the sigma) to the past relative vectors of the robot
-        # TODO: train the robot to take in 2 seconds of data (20 past frames)
-
         sigma = 0.15
         N = np.random.rand(*X_past.shape) * sigma
         X_past = torch.tensor(X_past)
@@ -229,19 +234,29 @@ class GeneratedTrajectoryDataset(Dataset):
 
         # Alternating between curved or straight path
         curved_or_straight_path = bool(random.randint(0, 1))
-        if curved_or_straight_path:
-            generated_traj = np.empty((2, self.N_past))
-            generated_traj[:, 0] = starting_pos
+        copy_person = bool(random.randint(1, 10))  # copy_person lets robot copy the person's movement
+        if copy_person == 1:
+            # shifting human trajectory
+            offset = np.random.rand(2) * 8 - 4  # limiting the offset to -4 to 4
+            offset = offset.reshape(2, 1)
+            generated_traj = X_past + offset
+            # plt.scatter(generated_traj[0], generated_traj[1])
+            # plt.scatter(X_past[0], X_past[1])
+            # plt.show()
+        else:   
+            if curved_or_straight_path:
+                generated_traj = np.empty((2, self.N_past))
+                generated_traj[:, 0] = starting_pos
 
-            for i in range(1, self.N_past):
-                generated_traj[:, i] = generated_traj[:, i - 1] + v * 0.12
-        else:
-            generated_traj = np.array(
-                [
-                    starting_pos[0] + radius * np.cos(theta),
-                    starting_pos[1] + radius * np.sin(theta),
-                ]
-            )
+                for i in range(1, self.N_past):
+                    generated_traj[:, i] = generated_traj[:, i - 1] + v * 0.12
+            else:
+                generated_traj = np.array(
+                    [
+                        starting_pos[0] + radius * np.cos(theta),
+                        starting_pos[1] + radius * np.sin(theta),
+                    ]
+                )
 
         #################  Calculating the target position  ################
         X = generated_traj[:, -1] - np.array(X_past[:, -1])

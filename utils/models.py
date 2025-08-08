@@ -3,6 +3,14 @@ import torch.nn.functional as F
 import torch
 import json
 
+########################################################
+##   Overview                                         ##
+##  - contains the models used for prediction         ##
+##  - MultiLayerRobot is the model used specifically  ##
+##    for the robot                                   ##
+##  - also contains some baseline models (standing    ##
+##    still and maintaining velocity)                 ##
+########################################################
 
 """ Multi Layer Perceptron (MLP) for predicting N steps into the future """
 class MultiLayer(nn.Module):
@@ -29,7 +37,6 @@ class MultiLayer(nn.Module):
         batch_size = x.size(0)  # Store the batch size before flattening
         x = x.view(batch_size, -1)  # Flatten the input x
         x = F.relu(self.linear1(x))  # Linear transform, then relu
-        # x = F.relu(self.linear2(x))
         out = self.linear3(x)
         out = out.view(
             batch_size, features, -1
@@ -70,36 +77,6 @@ class MultiLayerRobot(nn.Module):
         )  # Reshape the output to (batch_size, 2)
         out /= self.scale_factor
         return out
-
-
-# class MultiLayer2(nn.Module):
-
-#     def __init__(
-#         self,
-#         input_size,
-#         hidden_layer1,
-#         hidden_layer2,
-#         hidden_layer3,
-#         hidden_layer4,
-#         output_size,
-#     ):
-#         super().__init__()  # Inherited from the parent class nn.Module
-#         self.linear1 = nn.Linear(input_size, hidden_layer1)
-#         self.linear2 = nn.Linear(hidden_layer1, hidden_layer2)
-#         self.linear3 = nn.Linear(hidden_layer2, hidden_layer3)
-#         self.linear4 = nn.Linear(hidden_layer3, hidden_layer4)
-#         self.linear5 = nn.Linear(hidden_layer4, output_size)
-
-#     def forward(self, x):
-#         batch_size = x.size(0)
-#         x = x.view(batch_size, -1)
-#         x = F.relu(self.linear1(x))
-#         x = F.relu(self.linear2(x))
-#         x = F.relu(self.linear3(x))
-#         x = F.relu(self.linear4(x))
-#         out = self.linear5(x)
-#         out = out.view(batch_size, 2, -1)
-#         return out
 
 
 """ Baseline models """

@@ -14,6 +14,7 @@ BG_COLOR = (255, 255, 255)
 FPS = 30
 # SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
 SAMPLING_INTERVAL_MS = 0.12
+AGENT_PREDICT_FLAG = False  # flag for if want to display agent's future positions
 
 ########### Initializing constants for the CSV file ###########
 id = 0
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         150, 120, 100, 50
     )  # x, y, width, height --> Button properties
     last_sample_time = 0
-    agent = Agent(x=2, y=5, radius=0.5)
+    agent = Agent(x=2, y=5, radius=0.5, display_flag=AGENT_PREDICT_FLAG)
     robot = Robot(
         x=2,
         y=7,

@@ -14,6 +14,7 @@ class Agent:
         radius=0.5,
         epsilon=0.005,
         sigma_max=0.1,
+        display_flag=False,
     ):
         self.pos = [x, y]
         self.radius = radius
@@ -22,6 +23,7 @@ class Agent:
         self.sigma = 0
         self.epsilon = epsilon
         self.sigma_max = sigma_max
+        self.display_flag = display_flag
 
         """ Importing constants from the config file """
         with open("./utils/config.json", "r", encoding="utf-8") as file:
@@ -30,20 +32,21 @@ class Agent:
         self.N_future = data["future-steps"]
         self.N_past = data["past-steps"]
 
-        # initializing the model
-        save_path = "./weights/best-weights/best_weight_noise_scale_offset(20-past)(0.1-sigma).pth"
+        if display_flag:
+            # initializing the model
+            save_path = "./weights/best-weights/best_weight.pth"
 
-        # setting offset + scale flag
-        self.offset = "offset" in save_path
-        self.scale = "scale" in save_path
+            # setting offset + scale flag
+            self.offset = "offset" in save_path
+            self.scale = "scale" in save_path
 
-        # extracting the number of past steps from the file name
-        match = re.search(r"\((\d+)-past\)", save_path)
-        if match:
-            self.N_past = int(match.group(1))
+            # extracting the number of past steps from the file name
+            match = re.search(r"\((\d+)-past\)", save_path)
+            if match:
+                self.N_past = int(match.group(1))
 
-        self.model = models.MultiLayer(2 * self.N_past, 100, 100, self.N_future * 2)
-        self.model.load_state_dict(torch.load(save_path, weights_only=True))
+            self.model = models.MultiLayer(2 * self.N_past, 100, 100, self.N_future * 2)
+            self.model.load_state_dict(torch.load(save_path, weights_only=True))
 
         self.past_trajectory = np.array(
             (np.full(self.N_past, x), np.full(self.N_past, y)),
@@ -87,39 +90,41 @@ class Agent:
                 radius=5,
             )
 
-        # # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory
-        # for i in range(0, 3):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 255, 0),
-        #         (
-        #             int(meters_to_pixels(self.future_trajectory[0][i])),
-        #             int(meters_to_pixels(self.future_trajectory[1][i])),
-        #         ),
-        #         radius=5,
-        #     )
+        # if display flag is true, then will predict agent's future trajectory and display on screen
+        if self.display_flag:
+            # Draws green dots showing the model's prediction for the agent's future trajectory based on the past trajectory
+            for i in range(0, 3):
+                pygame.draw.circle(
+                    surface,
+                    (0, 255, 0),
+                    (
+                        int(meters_to_pixels(self.future_trajectory[0][i])),
+                        int(meters_to_pixels(self.future_trajectory[1][i])),
+                    ),
+                    radius=5,
+                )
 
-        # for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 153, 0),
-        #         (
-        #             int(meters_to_pixels(self.future_trajectory[0][i])),
-        #             int(meters_to_pixels(self.future_trajectory[1][i])),
-        #         ),
-        #         radius=5,
-        #     )
+            for i in range(3, len(convert_to_tuple_list(self.future_trajectory))):
+                pygame.draw.circle(
+                    surface,
+                    (0, 153, 0),
+                    (
+                        int(meters_to_pixels(self.future_trajectory[0][i])),
+                        int(meters_to_pixels(self.future_trajectory[1][i])),
+                    ),
+                    radius=5,
+                )
 
-        # for x, y in convert_to_tuple_list(self.future_trajectory):
-        #     pygame.draw.circle(
-        #         surface,
-        #         (0, 255, 0),
-        #         (
-        #             int(meters_to_pixels(x)),
-        #             int(meters_to_pixels(y)),
-        #         ),
-        #         radius=5,
-        #     )
+            for x, y in convert_to_tuple_list(self.future_trajectory):
+                pygame.draw.circle(
+                    surface,
+                    (0, 255, 0),
+                    (
+                        int(meters_to_pixels(x)),
+                        int(meters_to_pixels(y)),
+                    ),
+                    radius=5,
+                )
 
     def update(self, x, y):
         """When updating, it updates its past trajectory and then predicts a new path from the trained model
@@ -137,32 +142,23 @@ class Agent:
         N = np.random.randn(2, self.N_past) * self.sigma
         self.past_trajectory = self.past_trajectory + N
 
-        # Passing past trajectories to model to predict future trajectories
-        X_ego_past = T(
-            self.past_trajectory,
-            self.pos,
-            offset=self.offset,
-            scale=self.scale,
-            scale_factor=self.model.scale_factor,
-        )
-        # print("past predicted:", X_ego_past)
-        X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
-        # print("future predicted:", X_ego_future)
-        self.future_trajectory = T_inv(
-            X_ego_future.squeeze(),
-            self.pos,
-            offset=self.offset,
-            scale=self.scale,
-            scale_factor=self.model.scale_factor,
-        )
-
-        # # calculating past velocity
-        # past_velocity = (self.past_trajectory[:, :-1] - self.past_trajectory[:, 1:]) / 0.12
-        # past_velocity = np.append(past_velocity, ((self.past_trajectory[:, -1] - [x, y]) / 0.12).T[:, None], axis=1)
-        # # predicting the future paths with the updated past trajectory
-        # past_trajectory = torch.cat((torch.tensor(self.past_trajectory), torch.tensor(past_velocity)), dim=0)
-        # X_ego_future = self.model(X_ego_past.unsqueeze(0))
-        # self.future_trajectory = T_inv(X_ego_future.squeeze(), self.pos)[:2]
+        if self.display_flag:
+            # Passing past trajectories to model to predict future trajectories
+            X_ego_past = T(
+                self.past_trajectory,
+                self.pos,
+                offset=self.offset,
+                scale=self.scale,
+                scale_factor=self.model.scale_factor,
+            )
+            X_ego_future = self.model(torch.tensor(X_ego_past).float().unsqueeze(0))
+            self.future_trajectory = T_inv(
+                X_ego_future.squeeze(),
+                self.pos,
+                offset=self.offset,
+                scale=self.scale,
+                scale_factor=self.model.scale_factor,
+            )
 
     # Adding event handlers for arrow keys to ajust noise
     def on_arrow_down(self):

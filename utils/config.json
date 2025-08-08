@@ -1,6 +1,6 @@
 {
     "future-steps": 10,
-    "past-steps": 20,
+    "past-steps": 10,
     "offset": false,
     "rotate": false,
     "add-noise": false,
