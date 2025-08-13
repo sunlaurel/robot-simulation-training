@@ -1,2 +1,4 @@
 **/__pycache__
 **/robot_trajectory_generator_test.py
+**/.conda
+**/aml_rl
