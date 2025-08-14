@@ -14,5 +14,4 @@ from .data import *
 
 # ignoring warnings
 import warnings
-
 warnings.filterwarnings("ignore", category=UserWarning)

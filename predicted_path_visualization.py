@@ -1,3 +1,4 @@
+# addings utils to the system path
 import utils
 import torch
 from torch.utils.data import DataLoader
@@ -64,7 +65,7 @@ def plot_predicted_trajectory(x_past, x_future, x_predicted):
 
 if __name__ == "__main__":
 
-    with open(file="./utils/config.json", mode="r", encoding="utf-8") as file:
+    with open(file="../utils/config.json", mode="r", encoding="utf-8") as file:
         data = json.load(file)
 
     # Setting the constants
