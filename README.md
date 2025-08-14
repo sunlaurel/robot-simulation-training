@@ -5,7 +5,7 @@
 
  This project investigates the practicality of deploying robot companions to naturally accompany people walking outdoors
 
-## Directions
+## Setup
 Navigate to the directory where `requirements.txt` is and run `pip install -r requirements.txt`  
 From there, there are two kinds of models that you can train:
 1) A model that will predict N steps into the future of the person
