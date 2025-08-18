@@ -17,7 +17,6 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 dt = 0.1
 v_max = 1.0
-state = env.reset()
 
 
 # setting the size of the arena in meters
@@ -38,7 +37,7 @@ state_size, action_size = env.init(
 
 
 # initializing the policy network
-save_path = "./weights/best-weights-rl/policy_latest.pt"
+save_path = "./weights/best-weights-rl/policy_latest(2).pt"
 policy = Policy(state_size, action_size)
 policy.load_state_dict(
     torch.load(save_path, map_location=torch.device("cpu"))
@@ -52,11 +51,14 @@ def render(screen, state):
 
 
 def pixels_to_meters(pixel):
-    return pixel * arena_size / screen_width
+    # making it so the center is (0, 0), assuming that it's not already centered
+    # breakpoint()
+    return pixel * arena_size / screen_width - arena_size / 2
 
 
 def meters_to_pixels(meter):
-    return meter * screen_width / arena_size
+    # shifting coordinates to match original screen in pygame
+    return (meter + arena_size / 2) * screen_width / arena_size
 
 
 def set_goal(state, new_goal):
@@ -66,7 +68,10 @@ def set_goal(state, new_goal):
 
 
 if __name__ == "__main__":
+    state = env.reset()
     while RUNNING:
+        CURSOR_XY = pygame.mouse.get_pos()  # setting the cursor pos to the mouse pos
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 RUNNING = False
@@ -82,42 +87,21 @@ if __name__ == "__main__":
             env.reset()
             RESET = False
 
-        # TODO: set the env goal here
-        state = set_goal(state, np.vectorize(pixels_to_meters)(CURSOR_XY))
+        state = set_goal(
+            state, np.vectorize(pixels_to_meters)(CURSOR_XY)
+        )  # setting the env goal
 
-        action_dist = policy(
-            torch.tensor(env.sense(state), dtype=torch.float32)
-        )  # policy returns action distribution
-        action = (
-            action_dist.sample().cpu().detach().numpy() * v_max
-        )  # samples from the action distribution
-
-        # breakpoint()
+        # getting the action pair
+        action_dist = policy(torch.tensor(env.sense(state), dtype=torch.float32))
+        action = action_dist.sample().cpu().detach().numpy() * v_max
 
         new_state, _, _ = env.step(state, action, dt)
+
         render(screen, new_state)
+        state = new_state
 
         pygame.display.flip()
         clock.tick(15)
 
     pygame.quit()
     sys.exit()
-
-# RESET = True  # make a key callback so 'r' sets to true
-# RUNNING = True  # make a key callback so 'q' sets to false
-# CURSOR_XY = (x, y)  # have some event set this too
-# pygame.init()
-# screen = ...  # fill in
-
-# while RUNNING:
-#     # check pygame keys here
-#     if RESET:
-#         env.reset()
-#         RESET = False
-#     env.set_goal(CURSOR_XY)
-#     state = (
-#         env.get_observation()
-#     )  # state was updated by the cursor, so you need to get it explicitly
-#     action = agent(state)
-#     new_state = env.step()
-#     render(screen, new_state)
