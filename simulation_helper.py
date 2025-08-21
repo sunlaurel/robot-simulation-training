@@ -51,8 +51,18 @@ def T_inv(X_future, X_current, offset=True, scale=True, scale_factor=0.5):
 
     return X_update
 
+
 # Displaying text on screen
-def display_text(agent, robot, font, screen, sampling_interval_ms, width, height):
+def display_text(
+    agent,
+    robot,
+    font,
+    screen,
+    sampling_interval_ms,
+    width,
+    height,
+    meters_to_pixels=meters_to_pixels,
+):
     # calculating the speed of the agent
     speeds = np.linalg.norm(
         agent.past_trajectory[:, :-1] - agent.past_trajectory[:, 1:],
@@ -110,6 +120,7 @@ def display_text(agent, robot, font, screen, sampling_interval_ms, width, height
             (text_surface_robot_speed, text_rect_robot_speed),
         )
     )
+
 
 # Drawing a circle radius around the agent when standing still
 def draw_transparent_circle(surface, center, radius):

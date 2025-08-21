@@ -9,6 +9,8 @@ from simulation_helper import *
 ##  - renders the agent (the person) on the screen    ##
 ##  - if display_flag is on, then will display the    ##
 ##    model's predicted trajectory on the screen      ##
+##  - if draw_circle is on, then will render a        ##
+##    circle where the agent is                       ##
 ########################################################
 
 
@@ -21,7 +23,11 @@ class Agent:
         radius=0.5,
         epsilon=0.005,
         sigma_max=0.1,
-        display_flag=False,
+        display_flag=True,
+        draw_circle=True,
+        save_path="./weights/best-weights/best_weight.pth",
+        meters_to_pixels=meters_to_pixels,
+        pixels_to_meters=pixels_to_meters,
     ):
         self.pos = [x, y]
         self.radius = radius
@@ -31,6 +37,10 @@ class Agent:
         self.epsilon = epsilon
         self.sigma_max = sigma_max
         self.display_flag = display_flag  # if display_flag is on, then predicts and displays predictions of the agent's future position
+        self.draw_circle = draw_circle  # if draw_circle is on, then displays a circle where the agent is
+        self.save_path = save_path
+        self.meters_to_pixels = meters_to_pixels
+        self.pixels_to_meters = pixels_to_meters
 
         """ Importing constants from the config file """
         with open("./utils/config.json", "r", encoding="utf-8") as file:
@@ -40,20 +50,19 @@ class Agent:
         self.N_past = data["past-steps"]
 
         if display_flag:
-            # initializing the model
-            save_path = "./weights/best-weights/best_weight.pth"
+            ##########  initializing the model if display_flag is on  ############
 
             # setting offset + scale flag
             self.offset = "offset" in save_path
             self.scale = "scale" in save_path
 
             # extracting the number of past steps from the file name
-            match = re.search(r"\((\d+)-past\)", save_path)
+            match = re.search(r"\((\d+)-past\)", self.save_path)
             if match:
                 self.N_past = int(match.group(1))
 
             self.model = models.MultiLayer(2 * self.N_past, 100, 100, self.N_future * 2)
-            self.model.load_state_dict(torch.load(save_path, weights_only=True))
+            self.model.load_state_dict(torch.load(self.save_path, weights_only=True))
 
         self.past_trajectory = np.array(
             (np.full(self.N_past, x), np.full(self.N_past, y)),
@@ -67,12 +76,16 @@ class Agent:
 
     def draw(self, surface):
         # Draws the agent on the screen as a blue circle
-        pygame.draw.circle(
-            surface,
-            (0, 0, 255),
-            (int(meters_to_pixels(self.pos[0])), int(meters_to_pixels(self.pos[1]))),
-            meters_to_pixels(self.radius),
-        )
+        if self.draw_circle:
+            pygame.draw.circle(
+                surface,
+                (0, 0, 255),
+                (
+                    int(self.meters_to_pixels(self.pos[0])),
+                    int(self.meters_to_pixels(self.pos[1])),
+                ),
+                self.meters_to_pixels(self.radius),
+            )
 
         # Draws a red line for the agent's past trajectory
         pygame.draw.lines(
@@ -81,7 +94,7 @@ class Agent:
             width=2,
             closed=False,
             points=convert_to_tuple_list(
-                np.vectorize(meters_to_pixels)(self.past_trajectory)
+                np.vectorize(self.meters_to_pixels)(self.past_trajectory)
             ),
         )
 
@@ -91,11 +104,19 @@ class Agent:
                 surface,
                 (255, 0, 0),
                 (
-                    int(meters_to_pixels(x)),
-                    int(meters_to_pixels(y)),
+                    int(self.meters_to_pixels(x)),
+                    int(self.meters_to_pixels(y)),
                 ),
                 radius=5,
             )
+
+        # debugging
+        print(
+            "curr pos recalc:",
+            self.meters_to_pixels(self.past_trajectory[0, -1]),
+            ",",
+            self.meters_to_pixels(self.past_trajectory[1, -1]),
+        )
 
         # if display flag is true, then will predict agent's future trajectory and display on screen
         if self.display_flag:
@@ -105,8 +126,8 @@ class Agent:
                     surface,
                     (0, 255, 0),
                     (
-                        int(meters_to_pixels(self.future_trajectory[0][i])),
-                        int(meters_to_pixels(self.future_trajectory[1][i])),
+                        int(self.meters_to_pixels(self.future_trajectory[0][i])),
+                        int(self.meters_to_pixels(self.future_trajectory[1][i])),
                     ),
                     radius=5,
                 )
@@ -116,8 +137,8 @@ class Agent:
                     surface,
                     (0, 153, 0),
                     (
-                        int(meters_to_pixels(self.future_trajectory[0][i])),
-                        int(meters_to_pixels(self.future_trajectory[1][i])),
+                        int(self.meters_to_pixels(self.future_trajectory[0][i])),
+                        int(self.meters_to_pixels(self.future_trajectory[1][i])),
                     ),
                     radius=5,
                 )
@@ -127,8 +148,8 @@ class Agent:
                     surface,
                     (0, 255, 0),
                     (
-                        int(meters_to_pixels(x)),
-                        int(meters_to_pixels(y)),
+                        int(self.meters_to_pixels(x)),
+                        int(self.meters_to_pixels(y)),
                     ),
                     radius=5,
                 )
@@ -177,9 +198,9 @@ class Agent:
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
-            dx = mouse_x - meters_to_pixels(self.pos[0])
-            dy = mouse_y - meters_to_pixels(self.pos[1])
-            if dx**2 + dy**2 <= meters_to_pixels(self.radius) ** 2:
+            dx = mouse_x - self.meters_to_pixels(self.pos[0])
+            dy = mouse_y - self.meters_to_pixels(self.pos[1])
+            if dx**2 + dy**2 <= self.meters_to_pixels(self.radius) ** 2:
                 self.dragging = True
                 self.offset_pos = [dx, dy]
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -193,6 +214,6 @@ class Agent:
             if self.dragging:
                 mouse_x, mouse_y = event.pos
                 self.pos = [
-                    pixels_to_meters(mouse_x - self.offset_pos[0]),
-                    pixels_to_meters(mouse_y - self.offset_pos[1]),
+                    self.pixels_to_meters(mouse_x - self.offset_pos[0]),
+                    self.pixels_to_meters(mouse_y - self.offset_pos[1]),
                 ]

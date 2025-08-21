@@ -28,7 +28,7 @@ BG_COLOR = (255, 255, 255)
 FPS = 30
 # SAMPLING_INTERVAL_MS = 8.33 / 1000  # ~8.33 samples/sec
 SAMPLING_INTERVAL_MS = 0.12
-AGENT_PREDICT_FLAG = False  # flag for if want to display agent's future positions
+AGENT_PREDICT_FLAG = True  # flag for if want to display agent's future positions
 
 ########### Initializing constants for the CSV file ###########
 id = 0

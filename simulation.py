@@ -5,7 +5,7 @@ from utils import *
 from simulation_helper import *
 
 """ Constants """
-WIDTH, HEIGHT = 10, 10
+WIDTH, HEIGHT = 8, 8
 BG_COLOR = (255, 255, 255)
 FPS = 30
 
@@ -26,7 +26,9 @@ if __name__ == "__main__":
     pygame.display.set_caption("Trajectory Prediction Visualizer")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
-    agent = Agent(x=2, y=5)
+    agent = Agent(
+        x=2, y=5, save_path="./weights/best-weights/best_weight_noise_rotate.pth"
+    )
     sampling_interval_ms = 8.33 / 1000  # sampling at ~8.33 samples/sec
     last_sample_time = 0
 
