@@ -20,7 +20,7 @@ v_max = 1
 state = env.reset()
 
 # setting the size of the arena in meters
-arena_size = 5
+arena_size = 10
 agent_radius = 0.11
 goal_radius = 0.2
 
@@ -37,7 +37,7 @@ state_size, action_size = env.init(
 
 
 # initializing the policy network
-save_path = "./weights/best-weights-rl/policy_latest(2).pt"
+save_path = "./weights/best-weights-rl/policy_latest(penalize-more).pt"
 policy = Policy(state_size, action_size)
 policy.load_state_dict(
     torch.load(save_path, map_location=torch.device("cpu"))
@@ -83,8 +83,6 @@ def render_text(agent, screen):
 # renders one env frame
 def render(screen, state, agent):
     screen.fill((255, 255, 255))
-    # agent_x = int((state[0] + arena_size / 2) / arena_size * screen_width)
-    # agent_y = int((state[1] + arena_size / 2) / arena_size * screen_height)
     agent_x = meters_to_pixels(state[0])
     agent_y = meters_to_pixels(state[1])
     radius_pixels = int(agent_radius / arena_size * screen_width)
@@ -99,8 +97,6 @@ def render(screen, state, agent):
 
     # Draw goal
     goal_radius_pixels = int(goal_radius / arena_size * screen_width)
-    # goal_x = int((state[3] + arena_size / 2) / arena_size * screen_width)
-    # goal_y = int((state[4] + arena_size / 2) / arena_size * screen_height)
     goal_x = meters_to_pixels(state[3])
     goal_y = meters_to_pixels(state[4])
     pygame.draw.circle(screen, (0, 0, 100), (goal_x, goal_y), goal_radius_pixels, 3)
@@ -124,34 +120,17 @@ def meters_to_pixels(meter):
 def set_goal(state, new_goal):
     # offsetting so that the new goal is RADIUS away from the last future predicted position on the right
     # breakpoint()
-    offset_goal = np.array([-new_goal[0], new_goal[1]])
-    offset_goal /= np.linalg.norm(offset_goal)
-    offset_goal *= RADIUS
-    offset_goal += new_goal
 
-    state[-2] = offset_goal[0]
-    state[-1] = offset_goal[1]
-
-    # state[-2] = new_goal[0]
-    # state[-1] = new_goal[1]
+    state[-2] = new_goal[0]
+    state[-1] = new_goal[1]
 
     return state
 
-# TODO #1:
-# For now, comment out your future motion in your environment (to save on processing time),
-# go back to the static goal, and let's update your reward function to try and get this behavior.
-# Stephen suggested just trying to add a new penalty based on distance to the goal.
-# You can try something simple like every step check the final distance, train the agent,
-# and then try again in the interactive simulator to see how it worked
-
-# TODO #2:
-# I wonder if it's to do with the control update not being correctly handled (relating to dt)
-# in Stephen's or your code
 
 if __name__ == "__main__":
     last_sample_time = 0
     agent = Agent(
-        display_flag=True,
+        display_flag=False,
         draw_circle=False,
         save_path="./weights/best-weights/best_weight.pth",
         meters_to_pixels=meters_to_pixels,
@@ -179,6 +158,8 @@ if __name__ == "__main__":
             RESET = False
 
         CURSOR_XY = pygame.mouse.get_pos()  # setting the cursor pos to the mouse pos
+        agent.pos[0] = pixels_to_meters(CURSOR_XY[0])
+        agent.pos[1] = pixels_to_meters(CURSOR_XY[1])
 
         # updating the agent's past positions
         current_time = pygame.time.get_ticks()
@@ -187,7 +168,7 @@ if __name__ == "__main__":
             last_sample_time = current_time
 
             state = set_goal(
-                state, agent.future_trajectory[:, 0]
+                state, agent.past_trajectory[:, -1]
             )  # setting the env goal
 
             # getting the action pair and new state
