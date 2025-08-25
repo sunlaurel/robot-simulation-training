@@ -110,13 +110,13 @@ class Agent:
                 radius=5,
             )
 
-        # debugging
-        print(
-            "curr pos recalc:",
-            self.meters_to_pixels(self.past_trajectory[0, -1]),
-            ",",
-            self.meters_to_pixels(self.past_trajectory[1, -1]),
-        )
+        # # debugging
+        # print(
+        #     "curr pos recalc:",
+        #     self.meters_to_pixels(self.past_trajectory[0, -1]),
+        #     ",",
+        #     self.meters_to_pixels(self.past_trajectory[1, -1]),
+        # )
 
         # if display flag is true, then will predict agent's future trajectory and display on screen
         if self.display_flag:

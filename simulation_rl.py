@@ -88,7 +88,6 @@ def render(screen, state, agent):
     radius_pixels = int(agent_radius / arena_size * screen_width)
     pygame.draw.circle(screen, (0, 0, 0), (agent_x, agent_y), radius_pixels, 1)
     pygame.draw.circle(screen, (100, 100, 255), (agent_x, agent_y), radius_pixels)
-    print("curr pos calc:", agent_x, ",", agent_y)
 
     # Draw orientation
     ori_x = agent_x + int(radius_pixels * np.cos(state[2]))
