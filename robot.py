@@ -100,13 +100,9 @@ class Robot:
         diff = target_angle - self.theta
         return (diff + math.pi) % (2 * math.pi) - math.pi
 
-    def policy(self, X_past):
-        # TODO: move everything so that the policy is only being done relative to the robot
-        global v_last, target_pos
-        # alpha = 0.2
-        epsilon = 5e-02
-
-        ##############  Calculating the target position from the model #############
+    def predict_goal(self, X_past):
+        # INPUT: X_past is the list of past positions of the agent in world space
+        # RETURN: returns the projected goal for the robot to go to in world space
         relative_vectors_r, robot_velocities_r, _ = ConvertAbsoluteToRobotFrame(
             X_past,
             self.past_trajectory,
@@ -116,14 +112,11 @@ class Robot:
 
         input_vectors = ProcessPast(relative_vectors_r, robot_velocities_r)
 
-        # breakpoint()
-
         with torch.no_grad():
-            target = self.model(
-                torch.tensor(input_vectors).float().unsqueeze(0)
-            ).squeeze()
+            target = self.model(input_vectors)
+            pass
 
-        # putting the target position in absolute coordinates
+        target = self.predict_goal(input_vectors)
 
         self.target_pos = (
             ConvertRobotFrameToAbsolute(
@@ -132,7 +125,16 @@ class Robot:
             + self.past_trajectory[:, -1]
         )
 
-        # self.target_pos = target + self.pos  # self.past_trajectory[:, -1]
+        return self.target_pos
+
+    def policy(self, X_past):
+        # TODO: move everything so that the policy is only being done relative to the robot
+        global v_last, target_pos
+        # alpha = 0.2
+        epsilon = 5e-02
+
+        ##############  Calculating the target position from the model #############
+        self.predict_goal(X_past)
 
         #############  Robot Behavior  ################
         # calculating the angles and where the robot should move

@@ -107,6 +107,7 @@ def render(screen, state, agent):
     # breakpoint()
     render_text(agent, screen)
     agent.draw(screen)
+    robot.draw(screen)
     pygame.display.flip()
 
 
@@ -174,20 +175,19 @@ if __name__ == "__main__":
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= dt:
             agent.update(pixels_to_meters(CURSOR_XY[0]), pixels_to_meters(CURSOR_XY[1]))
-            # robot.update()
-            last_sample_time = current_time
-
-            state = set_goal(
-                state, agent.past_trajectory[:, -1]
-            )  # setting the env goal
+            target = robot.predict_goal(agent.past_trajectory)
+            state = set_goal(state, target)  # setting the env goal
 
             # getting the action pair and new state
             action_dist = policy(torch.tensor(env.sense(state), dtype=torch.float32))
             action = action_dist.sample().cpu().detach().numpy() * v_max
             new_state, _, _ = env.step(state, action, dt)
 
+            robot.update(action)  # updating the robot's state
+
             # breakpoint()
-            render(screen, new_state, agent)
+            render(screen, new_state, agent, robot)
+            last_sample_time = current_time
             state = new_state
 
         clock.tick()
