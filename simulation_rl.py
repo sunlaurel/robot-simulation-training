@@ -85,7 +85,7 @@ def render_text(agent, screen):
 
 
 # renders one env frame
-def render(screen, state, agent):
+def render(screen, state, agent, robot):
     screen.fill((255, 255, 255))
     agent_x = meters_to_pixels(state[0])
     agent_y = meters_to_pixels(state[1])
@@ -123,7 +123,6 @@ def meters_to_pixels(meter):
 
 def set_goal(state, new_goal):
     # offsetting so that the new goal is RADIUS away from the last future predicted position on the right
-    # breakpoint()
     state[-2] = new_goal[0]
     state[-1] = new_goal[1]
     return state

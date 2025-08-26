@@ -117,8 +117,6 @@ class Robot:
                 torch.tensor(input_vectors).float().unsqueeze(0)
             ).squeeze()
 
-        target = self.predict_goal(input_vectors)
-
         self.target_pos = (
             ConvertRobotFrameToAbsolute(
                 np.array([math.cos(self.theta), math.sin(self.theta)]), target

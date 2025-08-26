@@ -35,7 +35,6 @@ def ConvertAbsoluteToRobotFrame(X_past, R_past, heading, future_pos):
     # fig, ax = plt.subplots(figsize=(10, 9))
 
     # TODO: make more efficient without for loop
-    breakpoint()
     relative_vectors_w = X_past - R_past
     relative_future_position_w = torch.tensor(future_pos[:, None]) - torch.tensor(R_past)
     relative_vectors_r_lst = []
@@ -120,6 +119,7 @@ def ConvertAbsoluteToRobotFrame(X_past, R_past, heading, future_pos):
     # ax.legend()
     # ax.set_aspect("equal")
     # plt.show()
+
     return (
         np.array(relative_vectors_r_lst),
         np.array(robot_velocity_r_lst),
