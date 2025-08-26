@@ -113,8 +113,9 @@ class Robot:
         input_vectors = ProcessPast(relative_vectors_r, robot_velocities_r)
 
         with torch.no_grad():
-            target = self.model(input_vectors)
-            pass
+            target = self.model(
+                torch.tensor(input_vectors).float().unsqueeze(0)
+            ).squeeze()
 
         target = self.predict_goal(input_vectors)
 
