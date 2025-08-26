@@ -34,6 +34,11 @@ class Robot:
         target_x=2,
         target_y=5,
         theta=0,  # default, the robot is facing right
+        display_body=True,
+        display_target=True,
+        meters_to_pixels=meters_to_pixels,
+        pixels_to_meters=pixels_to_meters,
+        save_path="./weights/best-weights-robot/(copy-person)best_weight.pth",
         width=0.6,
         height=0.9,
         dt=8.33 / 1000,
@@ -41,6 +46,10 @@ class Robot:
         self.pos = [x, y]
         self.target_pos = [target_x, target_y]
         self.theta = theta  # angle that the robot is facing
+        self.display_body = display_body
+        self.display_target = display_target
+        self.meters_to_pixels = meters_to_pixels
+        self.pixels_to_meters = pixels_to_meters
         self.width = width
         self.height = height
         self.dt = dt
@@ -56,7 +65,6 @@ class Robot:
 
         # initializing the model
         # save_path = "./weights/best-weights-robot/(big-room)best_weight.pth"
-        save_path = "./weights/best-weights-robot/(copy-person)best_weight.pth"
 
         # setting offset + scale flag
         self.offset = "offset" in save_path
@@ -224,45 +232,47 @@ class Robot:
         # Draws the robot on the screen as a gray rectangle
         global target_pos  # sanity check
 
-        dx = self.height / 2
-        dy = self.width / 2
-        nose_dx = self.width * 0.3 / 2
-        nose_dy = self.height * 0.5 / 2
-        corners = np.array(
-            [
-                (-dx, -dy),  # top left
-                (dx, -dy),  # top right
-                (dx + nose_dx, -nose_dy),  # top left of nose
-                (dx + nose_dx, nose_dy),  # top right of nose
-                (dx, dy),  # bottom right
-                (-dx, dy),  # bottom left
-            ]
-        )
-
-        rotated = []
-        for x, y in corners:
-            rx = x * math.cos(self.theta) - y * math.sin(self.theta)
-            ry = x * math.sin(self.theta) + y * math.cos(self.theta)
-            rotated.append(
-                (
-                    meters_to_pixels(self.pos[0] + rx),
-                    meters_to_pixels(self.pos[1] + ry),
-                )
+        if self.display_body:
+            dx = self.height / 2
+            dy = self.width / 2
+            nose_dx = self.width * 0.3 / 2
+            nose_dy = self.height * 0.5 / 2
+            corners = np.array(
+                [
+                    (-dx, -dy),  # top left
+                    (dx, -dy),  # top right
+                    (dx + nose_dx, -nose_dy),  # top left of nose
+                    (dx + nose_dx, nose_dy),  # top right of nose
+                    (dx, dy),  # bottom right
+                    (-dx, dy),  # bottom left
+                ]
             )
 
-        pygame.draw.polygon(
-            surface,
-            (128, 128, 128),
-            rotated,
-        )
+            rotated = []
+            for x, y in corners:
+                rx = x * math.cos(self.theta) - y * math.sin(self.theta)
+                ry = x * math.sin(self.theta) + y * math.cos(self.theta)
+                rotated.append(
+                    (
+                        self.meters_to_pixels(self.pos[0] + rx),
+                        self.meters_to_pixels(self.pos[1] + ry),
+                    )
+                )
 
-        # Draws the robot's target on the screen as a dark green circle
-        pygame.draw.circle(
-            surface,
-            (5, 59, 14),
-            (
-                int(meters_to_pixels(self.target_pos[0])),
-                int(meters_to_pixels(self.target_pos[1])),
-            ),
-            meters_to_pixels(0.15),
-        )
+            pygame.draw.polygon(
+                surface,
+                (128, 128, 128),
+                rotated,
+            )
+
+        if self.display_target:
+            # Draws the robot's target on the screen as a dark green circle
+            pygame.draw.circle(
+                surface,
+                (5, 59, 14),
+                (
+                    int(self.meters_to_pixels(self.target_pos[0])),
+                    int(self.meters_to_pixels(self.target_pos[1])),
+                ),
+                self.meters_to_pixels(0.15),
+            )

@@ -6,7 +6,11 @@ import aml_rl.single_agent_dd_env as env
 from aml_rl.network import Policy
 from simulation_helper import *
 from agent import Agent
+from robot import Robot
 from utils import *
+
+# TODO: fix the problem/bug with rendering - the median speed of the cursor
+#       is displaying 0 even when it's clearly moving
 
 # initializing the screen
 pygame.init()
@@ -119,10 +123,8 @@ def meters_to_pixels(meter):
 def set_goal(state, new_goal):
     # offsetting so that the new goal is RADIUS away from the last future predicted position on the right
     # breakpoint()
-
     state[-2] = new_goal[0]
     state[-1] = new_goal[1]
-
     return state
 
 
@@ -134,6 +136,14 @@ if __name__ == "__main__":
         save_path="./weights/best-weights/best_weight.pth",
         meters_to_pixels=meters_to_pixels,
         pixels_to_meters=pixels_to_meters,
+    )
+
+    robot = Robot(
+        meters_to_pixels=meters_to_pixels,
+        pixels_to_meters=pixels_to_meters,
+        dt=dt,
+        display_body=False,
+        display_target=False,
     )
 
     while RUNNING:
@@ -164,6 +174,7 @@ if __name__ == "__main__":
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= dt:
             agent.update(pixels_to_meters(CURSOR_XY[0]), pixels_to_meters(CURSOR_XY[1]))
+            # robot.update()
             last_sample_time = current_time
 
             state = set_goal(
