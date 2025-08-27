@@ -22,9 +22,10 @@ clock = pygame.time.Clock()
 dt = 0.12
 v_max = 1
 state = env.reset()
+FPS = 30
 
 # setting the size of the arena in meters
-arena_size = 10
+arena_size = 2.88
 agent_radius = 0.11
 goal_radius = 0.2
 
@@ -41,7 +42,7 @@ state_size, action_size = env.init(
 
 
 # initializing the policy network
-save_path = "./weights/best-weights-rl/policy_latest(penalize-more).pt"
+save_path = "./weights/best-weights-rl-vel/policy_latest(penalizing-not-same-vel-if-reached-goal).pt"
 policy = Policy(state_size, action_size)
 policy.load_state_dict(
     torch.load(save_path, map_location=torch.device("cpu"))
@@ -122,9 +123,14 @@ def meters_to_pixels(meter):
 
 def set_goal(state, new_goal):
     # offsetting so that the new goal is RADIUS away from the last future predicted position on the right
-    # breakpoint()
-    state[-2] = new_goal[0]
-    state[-1] = new_goal[1]
+    state[3] = new_goal[0]
+    state[4] = new_goal[1]
+    return state
+
+
+def set_goal_vel(state, new_goal_vel):
+    state[5] = new_goal_vel[0]
+    state[6] = new_goal_vel[1]
     return state
 
 
@@ -138,13 +144,13 @@ if __name__ == "__main__":
         pixels_to_meters=pixels_to_meters,
     )
 
-    robot = Robot(
-        meters_to_pixels=meters_to_pixels,
-        pixels_to_meters=pixels_to_meters,
-        dt=dt,
-        display_body=False,
-        display_target=False,
-    )
+    # robot = Robot(
+    #     meters_to_pixels=meters_to_pixels,
+    #     pixels_to_meters=pixels_to_meters,
+    #     dt=dt,
+    #     display_body=False,
+    #     display_target=False,
+    # )
 
     while RUNNING:
         for event in pygame.event.get():
@@ -174,23 +180,26 @@ if __name__ == "__main__":
         current_time = pygame.time.get_ticks()
         if current_time - last_sample_time >= dt:
             agent.update(pixels_to_meters(CURSOR_XY[0]), pixels_to_meters(CURSOR_XY[1]))
-            # robot.update()
             last_sample_time = current_time
 
-            state = set_goal(
-                state, agent.past_trajectory[:, -1]
-            )  # setting the env goal
+            # setting the state goal
+            state = set_goal(state, agent.pos)  # setting the env goal to be the cursor
+            state = set_goal_vel(
+                state, agent.past_trajectory[:, -1] - agent.past_trajectory[:, -2]
+            )  # setting the target velocity to be the most velocity
 
             # getting the action pair and new state
             action_dist = policy(torch.tensor(env.sense(state), dtype=torch.float32))
             action = action_dist.sample().cpu().detach().numpy() * v_max
-            new_state, _, _ = env.step(state, action, dt)
+            state, _, _ = env.step(state, action, dt)
 
-            # breakpoint()
-            render(screen, new_state, agent)
-            state = new_state
+            # render(screen, new_state, agent)
+            # state = new_state
 
-        clock.tick()
+        # clock.tick(FPS)
+        print("state:", state)
+        render(screen, state, agent)
+        clock.tick_busy_loop(FPS)
 
     pygame.quit()
     sys.exit()
