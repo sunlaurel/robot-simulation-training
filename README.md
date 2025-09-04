@@ -1,9 +1,7 @@
 # Investigating Potential of Social Navigation with Companion Robots in Outdoor Settings
 
 ## Overview
- Outdoor spaces and trails have played an important role in improving mental and physical health as well as fostering sustainable communities
-
- This project investigates the practicality of deploying robot companions to naturally accompany people walking outdoors
+Outdoor spaces and trails have played an important role in improving mental and physical health and fostering sustainable communities. This project investigates the practicality of deploying robot companions to naturally accompany individuals to encourage people to engage in more outdoor activities.
 
 ## Setup
 Navigate to the directory where `requirements.txt` is and run `pip install -r requirements.txt`  
